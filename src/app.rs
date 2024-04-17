@@ -1,4 +1,7 @@
-use crate::{calc::to_buy, holdings::{StockSymbol, ShareValues, VanguardRebalance, VanguardHoldings, parse_csv_download}};
+use crate::{
+    calc::to_buy,
+    holdings::{parse_csv_download, ShareValues, StockSymbol, VanguardHoldings, VanguardRebalance},
+};
 use futures::executor::block_on;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -43,7 +46,7 @@ pub struct VaporeApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     vanguard_holdings: VanguardHoldings,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    stock_quotes: ShareValues
+    stock_quotes: ShareValues,
 }
 
 impl Default for VaporeApp {
@@ -144,8 +147,12 @@ impl eframe::App for VaporeApp {
                     .selected_text(self.brokerage_account_num.to_string())
                     .show_ui(ui, |ui| {
                         for acct_num in self.vanguard_holdings.accounts.keys() {
-                            ui.selectable_value(&mut self.brokerage_account_num, *acct_num, acct_num.to_string());
-                        };
+                            ui.selectable_value(
+                                &mut self.brokerage_account_num,
+                                *acct_num,
+                                acct_num.to_string(),
+                            );
+                        }
                     });
             });
             ui.horizontal(|ui| {
@@ -154,8 +161,12 @@ impl eframe::App for VaporeApp {
                     .selected_text(self.trad_account_num.to_string())
                     .show_ui(ui, |ui| {
                         for acct_num in self.vanguard_holdings.accounts.keys() {
-                            ui.selectable_value(&mut self.trad_account_num, *acct_num, acct_num.to_string());
-                        };
+                            ui.selectable_value(
+                                &mut self.trad_account_num,
+                                *acct_num,
+                                acct_num.to_string(),
+                            );
+                        }
                     });
             });
             ui.horizontal(|ui| {
@@ -164,12 +175,17 @@ impl eframe::App for VaporeApp {
                     .selected_text(self.roth_account_num.to_string())
                     .show_ui(ui, |ui| {
                         for acct_num in self.vanguard_holdings.accounts.keys() {
-                            ui.selectable_value(&mut self.roth_account_num, *acct_num, acct_num.to_string());
-                        };
+                            ui.selectable_value(
+                                &mut self.roth_account_num,
+                                *acct_num,
+                                acct_num.to_string(),
+                            );
+                        }
                     });
             });
 
-            if ui.button("Set account numbers").clicked() {
+            if ui.button("Update").clicked() {
+                block_on(self.stock_quotes.add_missing_quotes()).unwrap();
                 if let Some(path) = rfd::FileDialog::new().pick_file() {
                     self.vanguard_holdings = block_on(parse_csv_download(path)).unwrap();
                     self.rebalance = to_buy(
@@ -195,74 +211,114 @@ impl eframe::App for VaporeApp {
                         self.use_brokerage_retirement,
                         self.brokerage_holdings,
                         self.stock_quotes,
-                        ).unwrap();
+                    )
+                    .unwrap();
                 };
             };
 
             ui.horizontal(|ui| {
-                ui.vertical(|ui|{
+                ui.vertical(|ui| {
                     ui.label("Symbol");
                     ui.label("Brokerage");
                     for symbol in StockSymbol::list() {
                         ui.label(format!("{:?}", symbol));
-                    };
+                    }
                     ui.label("Traditional IRA");
                     for symbol in StockSymbol::list() {
                         ui.label(format!("{:?}", symbol));
-                    };
-                    ui.label("Roth IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", symbol));
-                    };
-                });
-                ui.vertical(|ui|{
-                    ui.label("Holdings");
-                    ui.label("Brokerage");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.brokerage.current.stock_value(symbol)));
-                    };
-                    ui.label("Traditional IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.traditional_ira.current.stock_value(symbol)));
                     }
                     ui.label("Roth IRA");
                     for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.roth_ira.current.stock_value(symbol)));
-                    };
+                        ui.label(format!("{:?}", symbol));
+                    }
                 });
-                ui.vertical(|ui|{
+                ui.vertical(|ui| {
+                    ui.label("Holdings");
+                    ui.label("Brokerage");
+                    for symbol in StockSymbol::list() {
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance.brokerage.current.stock_value(symbol)
+                        ));
+                    }
+                    ui.label("Traditional IRA");
+                    for symbol in StockSymbol::list() {
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance.traditional_ira.current.stock_value(symbol)
+                        ));
+                    }
+                    ui.label("Roth IRA");
+                    for symbol in StockSymbol::list() {
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance.roth_ira.current.stock_value(symbol)
+                        ));
+                    }
+                });
+                ui.vertical(|ui| {
                     ui.label("Target");
                     ui.label("Brokerage");
                     for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.brokerage.target.stock_value(symbol)));
-                    };
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance.brokerage.target.stock_value(symbol)
+                        ));
+                    }
                     ui.label("Traditional IRA");
                     for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.traditional_ira.target.stock_value(symbol)));
-                    };
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance.traditional_ira.target.stock_value(symbol)
+                        ));
+                    }
                     ui.label("Roth IRA");
                     for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.roth_ira.target.stock_value(symbol)));
-                    };
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance.roth_ira.target.stock_value(symbol)
+                        ));
+                    }
                 });
-                ui.vertical(|ui|{
+                ui.vertical(|ui| {
                     ui.label("Purchase");
                     ui.label("Brokerage");
                     for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.brokerage.sale_purchases_needed.stock_value(symbol)));
-                    };
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance
+                                .brokerage
+                                .sale_purchases_needed
+                                .stock_value(symbol)
+                        ));
+                    }
                     ui.label("Traditional IRA");
                     for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.traditional_ira.sale_purchases_needed.stock_value(symbol)));
-                    };
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance
+                                .traditional_ira
+                                .sale_purchases_needed
+                                .stock_value(symbol)
+                        ));
+                    }
                     ui.label("Roth IRA");
                     for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", self.rebalance.roth_ira.sale_purchases_needed.stock_value(symbol)));
-                    };
+                        ui.label(format!(
+                            "{:?}",
+                            self.rebalance
+                                .roth_ira
+                                .sale_purchases_needed
+                                .stock_value(symbol)
+                        ));
+                    }
                 });
             });
 
-            ui.add(egui::Slider::new(&mut self.brokerage_stock, 0..=100).text("Brokerage percentage stock"));
+            ui.add(
+                egui::Slider::new(&mut self.brokerage_stock, 0..=100)
+                    .text("Brokerage percentage stock"),
+            );
 
             ui.separator();
 

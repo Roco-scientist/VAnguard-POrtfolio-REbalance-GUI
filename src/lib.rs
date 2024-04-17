@@ -2,7 +2,6 @@
 
 mod app;
 pub use app::VaporeApp;
-pub mod arguments;
 pub mod asset;
 pub mod calc;
 pub mod holdings;

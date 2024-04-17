@@ -1,14 +1,14 @@
 use crate::asset::SubAllocations;
 use anyhow::{Context, Result};
-use chrono::{NaiveDate, Duration};
+use chrono::{Duration, NaiveDate};
 use std::{
     collections::HashMap,
     fmt,
     fs::File,
     io::{BufRead, BufReader},
-    path::PathBuf,
     ops::{Add, Div, Mul, Sub},
-    vec::Vec, 
+    path::PathBuf,
+    vec::Vec,
 };
 use time::{macros::format_description, OffsetDateTime};
 use yahoo_finance_api as yahoo;
@@ -109,7 +109,7 @@ impl StockSymbol {
         }
     }
 
-    pub fn list() -> [StockSymbol;12] {
+    pub fn list() -> [StockSymbol; 12] {
         [
             StockSymbol::VXUS,
             StockSymbol::BNDX,
@@ -398,10 +398,8 @@ pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result
         let format = format_description!(
             "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]"
         );
-        let start =
-            OffsetDateTime::parse(&format!("{}-12-25 00:00:01 -05", year), format)?;
-        let stop =
-            OffsetDateTime::parse(&format!("{}-12-31 23:59:59 -05", year), format)?;
+        let start = OffsetDateTime::parse(&format!("{}-12-25 00:00:01 -05", year), format)?;
+        let stop = OffsetDateTime::parse(&format!("{}-12-31 23:59:59 -05", year), format)?;
         let response = provider
             .get_quote_history(stock_str, start, stop)
             .await
@@ -1001,7 +999,7 @@ pub struct VanguardHoldings {
     pub accounts: HashMap<u32, ShareValues>,
     quotes: ShareValues,
     transactions: Vec<Transaction>, // holds all transactions, which needs to be filtered by trad
-                                    // acct num later
+    // acct num later
     distributions: HashMap<u32, f32>,
 }
 
@@ -1034,13 +1032,22 @@ impl VanguardHoldings {
         self.transactions.clone()
     }
     pub fn distributions(&self, account_number: &u32) -> f32 {
-        self.distributions.get(account_number).unwrap_or(&0.0).clone()
+        self.distributions
+            .get(account_number)
+            .unwrap_or(&0.0)
+            .clone()
     }
     // Calculated the previous end of year holdings value based on the holdings times the quotes
     // from December 31st of the previous year.
     pub async fn eoy_value(&mut self, year: u32, traditional_acct_num: u32) -> Result<Option<f32>> {
-        let trad_holdings = self.accounts.get(&traditional_acct_num).unwrap_or(&ShareValues::new()).clone();
-        if let Some(holdings) = self.eoy_traditional_holdings(year, traditional_acct_num, trad_holdings) {
+        let trad_holdings = self
+            .accounts
+            .get(&traditional_acct_num)
+            .unwrap_or(&ShareValues::new())
+            .clone();
+        if let Some(holdings) =
+            self.eoy_traditional_holdings(year, traditional_acct_num, trad_holdings)
+        {
             let mut quotes = ShareValues::new_quote();
             quotes.add_missing_eoy_quotes(year - 1).await?;
             let eoy_value = (holdings * quotes).total_value();
@@ -1051,7 +1058,12 @@ impl VanguardHoldings {
     }
     // Takes the current holdings and subtracts all transaction since December 31st to come to the
     // holdings at that date.
-    fn eoy_traditional_holdings(&mut self, year: u32, traditional_acct_num: u32, trad_holdings: ShareValues) -> Option<ShareValues> {
+    fn eoy_traditional_holdings(
+        &mut self,
+        year: u32,
+        traditional_acct_num: u32,
+        trad_holdings: ShareValues,
+    ) -> Option<ShareValues> {
         let mut enough_transaction = false;
         let mut total_transactions = 0;
         let mut eoy_holdings = trad_holdings;
@@ -1062,23 +1074,24 @@ impl VanguardHoldings {
             // subtract from the current holdings.  Also stores a true value if anything is
             // older to keep track whether or not enough transactions were pulled from
             // Vanguard to get to December 31st.
-            if transaction.trade_date > previous_year && transaction.account_number == traditional_acct_num {
+            if transaction.trade_date > previous_year
+                && transaction.account_number == traditional_acct_num
+            {
                 total_transactions += 1;
                 // Cash is allocated in VMFXX.  These are not shares in the transaction, so
                 // net amount needs to be subtracted
                 if transaction.symbol == StockSymbol::VMFXX {
-                    eoy_holdings.subtract_stock_value(
-                        transaction.symbol.clone(),
-                        transaction.net_amount,
-                    );
+                    eoy_holdings
+                        .subtract_stock_value(transaction.symbol.clone(), transaction.net_amount);
                 } else if transaction.symbol != StockSymbol::Empty {
-                    eoy_holdings.subtract_stock_value(
-                        transaction.symbol.clone(),
-                        transaction.shares,
-                    );
+                    eoy_holdings
+                        .subtract_stock_value(transaction.symbol.clone(), transaction.shares);
                 } else if transaction.transaction_type == TransactionType::DISTRIBUTION {
                     if transaction.trade_date < following_year {
-                        let distribution = self.distributions.entry(transaction.account_number).or_insert(0.0); 
+                        let distribution = self
+                            .distributions
+                            .entry(transaction.account_number)
+                            .or_insert(0.0);
                         *distribution -= transaction.net_amount;
                     }
                 }
@@ -1090,11 +1103,9 @@ impl VanguardHoldings {
             eprintln!("Possibly not enough history in the downloaded Vanguard CSV to accurately calculate end of year holdings")
         }
         if total_transactions == 0 {
-            eprintln!(
-                "No transactions found to calculate EOY holdings for minimum distribution"
-            );
+            eprintln!("No transactions found to calculate EOY holdings for minimum distribution");
             None
-        }else{
+        } else {
             Some(eoy_holdings)
         }
     }
@@ -1315,10 +1326,7 @@ impl fmt::Display for VanguardRebalance {
             "Retirement target:\n{}\n\n",
             self.retirement_target
         ));
-        out_string.push_str(&format!(
-            "Traditional IRA:\n{}\n\n",
-            self.traditional_ira
-        ));
+        out_string.push_str(&format!("Traditional IRA:\n{}\n\n", self.traditional_ira));
         out_string.push_str(&format!("Roth IRA:\n{}\n\n", self.roth_ira));
         out_string.push_str(&format!("Brokerage:\n{}\n\n", self.brokerage));
         write!(f, "{}", out_string.trim_end_matches('\n'))
@@ -1389,9 +1397,7 @@ impl TransactionType {
 /// parse_csv_download takes in the file path of the downloaded file from Vanguard and parses it
 /// into VanguardHoldings.  The VanguardHoldings is a struct which holds the values of what is
 /// contained within the vangaurd account along with quotes for each of the ETFs
-pub async fn parse_csv_download(
-    csv_path: PathBuf,
-) -> Result<VanguardHoldings> {
+pub async fn parse_csv_download(csv_path: PathBuf) -> Result<VanguardHoldings> {
     let mut header = Vec::new();
     let mut transaction_header = Vec::new();
     let csv_file = File::open(csv_path)?;
@@ -1475,9 +1481,7 @@ pub async fn parse_csv_download(
                             if let Some(shares) = shares_option {
                                 if let Some(trade_date) = trade_date_option {
                                     if let Some(net_amount) = net_amount_option {
-                                        if let Some(transaction_type) =
-                                            transaction_type_option
-                                        {
+                                        if let Some(transaction_type) = transaction_type_option {
                                             transactions.push(Transaction {
                                                 account_number: account_number,
                                                 symbol,
