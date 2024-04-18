@@ -9,7 +9,7 @@ use futures::executor::block_on;
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct VaporeApp {
     // Example stuff:
-    age: u32,
+    birth_year: u32,
     retirement_year: i32,
     brokerage_stock: u32,
     brokerage_account_num: u32,
@@ -17,23 +17,35 @@ pub struct VaporeApp {
     trad_account_num: u32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_cash_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_us_stock_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_int_stock_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_us_bond_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_int_bond_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     roth_holdings: ShareValues,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     roth_us_stock_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     roth_us_bond_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     roth_int_stock_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     roth_int_bond_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     roth_cash_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_holdings: ShareValues,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_us_stock_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_us_bond_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_int_stock_add: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_int_bond_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_cash_add: f32,
@@ -51,7 +63,7 @@ pub struct VaporeApp {
 impl Default for VaporeApp {
     fn default() -> Self {
         Self {
-            age: 0,
+            birth_year: 1980,
             retirement_year: 2025,
             brokerage_stock: 65,
             brokerage_account_num: 0,
@@ -210,6 +222,11 @@ impl eframe::App for VaporeApp {
             ui.add(
                 egui::Slider::new(&mut self.retirement_year, 2020..=2100)
                     .text("Retirement year"),
+            );
+
+            ui.add(
+                egui::Slider::new(&mut self.birth_year, 1940..=2100)
+                    .text("Birth year"),
             );
 
             if ui.button("Update").clicked() {
