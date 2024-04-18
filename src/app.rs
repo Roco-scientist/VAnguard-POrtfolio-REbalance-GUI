@@ -15,7 +15,6 @@ pub struct VaporeApp {
     brokerage_account_num: u32,
     roth_account_num: u32,
     trad_account_num: u32,
-    percent_stock: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_cash_add: f32,
     brokerage_us_stock_add: f32,
@@ -58,7 +57,6 @@ impl Default for VaporeApp {
             brokerage_account_num: 0,
             roth_account_num: 0,
             trad_account_num: 0,
-            percent_stock: 0.0,
             brokerage_cash_add: 0.0,
             brokerage_us_stock_add: 0.0,
             brokerage_int_stock_add: 0.0,
@@ -154,6 +152,7 @@ impl eframe::App for VaporeApp {
                             );
                         }
                     });
+                ui.checkbox(&mut self.use_brokerage_retirement, "Retirement");
             });
             ui.horizontal(|ui| {
                 ui.label("Traditional IRA account number:");
@@ -211,7 +210,7 @@ impl eframe::App for VaporeApp {
             if ui.button("Update").clicked() {
                 block_on(self.stock_quotes.add_missing_quotes()).unwrap();
                 self.rebalance = to_buy(
-                    self.percent_stock,
+                    self.brokerage_stock as f32,
                     self.brokerage_cash_add,
                     self.brokerage_us_stock_add,
                     self.brokerage_int_stock_add,
@@ -250,7 +249,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Brokerage");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance.brokerage.current.stock_value(symbol)
                             ));
                         }
@@ -259,7 +258,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Traditional IRA");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance.traditional_ira.current.stock_value(symbol)
                             ));
                         }
@@ -268,7 +267,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Roth IRA");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance.roth_ira.current.stock_value(symbol)
                             ));
                         }
@@ -287,7 +286,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Brokerage");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance.brokerage.target.stock_value(symbol)
                             ));
                         }
@@ -296,7 +295,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Traditional IRA");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance.traditional_ira.target.stock_value(symbol)
                             ));
                         }
@@ -305,7 +304,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Roth IRA");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance.roth_ira.target.stock_value(symbol)
                             ));
                         }
@@ -324,7 +323,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Brokerage");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance
                                     .brokerage
                                     .sale_purchases_needed
@@ -336,7 +335,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Traditional IRA");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance
                                     .traditional_ira
                                     .sale_purchases_needed
@@ -348,7 +347,7 @@ impl eframe::App for VaporeApp {
                         ui.label("Roth IRA");
                         for symbol in StockSymbol::list() {
                             ui.label(format!(
-                                "{:?}",
+                                "{:.1}",
                                 self.rebalance
                                     .roth_ira
                                     .sale_purchases_needed
