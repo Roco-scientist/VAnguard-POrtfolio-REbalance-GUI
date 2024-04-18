@@ -207,6 +207,11 @@ impl eframe::App for VaporeApp {
                     .text("Brokerage percentage stock"),
             );
 
+            ui.add(
+                egui::Slider::new(&mut self.retirement_year, 2020..=2100)
+                    .text("Retirement year"),
+            );
+
             if ui.button("Update").clicked() {
                 block_on(self.stock_quotes.add_missing_quotes()).unwrap();
                 self.rebalance = to_buy(
@@ -234,7 +239,6 @@ impl eframe::App for VaporeApp {
                     self.stock_quotes,
                 )
                 .unwrap();
-                println!("Rebalance: {:?}", self.rebalance);
             };
 
             egui::CollapsingHeader::new("Holdings").show(ui, |ui| {
