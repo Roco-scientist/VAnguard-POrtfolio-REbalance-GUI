@@ -184,141 +184,161 @@ impl eframe::App for VaporeApp {
                     });
             });
 
-            if ui.button("Update").clicked() {
-                block_on(self.stock_quotes.add_missing_quotes()).unwrap();
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
-                    self.vanguard_holdings = block_on(parse_csv_download(path)).unwrap();
-                    self.rebalance = to_buy(
-                        self.percent_stock,
-                        self.brokerage_cash_add,
-                        self.brokerage_us_stock_add,
-                        self.brokerage_int_stock_add,
-                        self.brokerage_us_bond_add,
-                        self.brokerage_int_bond_add,
-                        self.retirement_year,
-                        self.roth_holdings,
-                        self.roth_us_stock_add,
-                        self.roth_us_bond_add,
-                        self.roth_int_stock_add,
-                        self.roth_int_bond_add,
-                        self.roth_cash_add,
-                        self.traditional_holdings,
-                        self.traditional_us_stock_add,
-                        self.traditional_us_bond_add,
-                        self.traditional_int_stock_add,
-                        self.traditional_int_bond_add,
-                        self.traditional_cash_add,
-                        self.use_brokerage_retirement,
-                        self.brokerage_holdings,
-                        self.stock_quotes,
-                    )
-                    .unwrap();
-                };
-            };
-
-            ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    ui.label("Symbol");
-                    ui.label("Brokerage");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", symbol));
-                    }
-                    ui.label("Traditional IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", symbol));
-                    }
-                    ui.label("Roth IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!("{:?}", symbol));
-                    }
-                });
-                ui.vertical(|ui| {
-                    ui.label("Holdings");
-                    ui.label("Brokerage");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance.brokerage.current.stock_value(symbol)
-                        ));
-                    }
-                    ui.label("Traditional IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance.traditional_ira.current.stock_value(symbol)
-                        ));
-                    }
-                    ui.label("Roth IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance.roth_ira.current.stock_value(symbol)
-                        ));
-                    }
-                });
-                ui.vertical(|ui| {
-                    ui.label("Target");
-                    ui.label("Brokerage");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance.brokerage.target.stock_value(symbol)
-                        ));
-                    }
-                    ui.label("Traditional IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance.traditional_ira.target.stock_value(symbol)
-                        ));
-                    }
-                    ui.label("Roth IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance.roth_ira.target.stock_value(symbol)
-                        ));
-                    }
-                });
-                ui.vertical(|ui| {
-                    ui.label("Purchase");
-                    ui.label("Brokerage");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance
-                                .brokerage
-                                .sale_purchases_needed
-                                .stock_value(symbol)
-                        ));
-                    }
-                    ui.label("Traditional IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance
-                                .traditional_ira
-                                .sale_purchases_needed
-                                .stock_value(symbol)
-                        ));
-                    }
-                    ui.label("Roth IRA");
-                    for symbol in StockSymbol::list() {
-                        ui.label(format!(
-                            "{:?}",
-                            self.rebalance
-                                .roth_ira
-                                .sale_purchases_needed
-                                .stock_value(symbol)
-                        ));
-                    }
-                });
-            });
-
             ui.add(
                 egui::Slider::new(&mut self.brokerage_stock, 0..=100)
                     .text("Brokerage percentage stock"),
             );
+
+            if ui.button("Update").clicked() {
+                block_on(self.stock_quotes.add_missing_quotes()).unwrap();
+                self.rebalance = to_buy(
+                    self.percent_stock,
+                    self.brokerage_cash_add,
+                    self.brokerage_us_stock_add,
+                    self.brokerage_int_stock_add,
+                    self.brokerage_us_bond_add,
+                    self.brokerage_int_bond_add,
+                    self.retirement_year,
+                    self.roth_holdings,
+                    self.roth_us_stock_add,
+                    self.roth_us_bond_add,
+                    self.roth_int_stock_add,
+                    self.roth_int_bond_add,
+                    self.roth_cash_add,
+                    self.traditional_holdings,
+                    self.traditional_us_stock_add,
+                    self.traditional_us_bond_add,
+                    self.traditional_int_stock_add,
+                    self.traditional_int_bond_add,
+                    self.traditional_cash_add,
+                    self.use_brokerage_retirement,
+                    self.brokerage_holdings,
+                    self.stock_quotes,
+                )
+                .unwrap();
+            };
+
+            egui::CollapsingHeader::new("Holdings").show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        ui.label("Symbol");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!("{:?}", symbol));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Brokerage");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance.brokerage.current.stock_value(symbol)
+                            ));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Traditional IRA");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance.traditional_ira.current.stock_value(symbol)
+                            ));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Roth IRA");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance.roth_ira.current.stock_value(symbol)
+                            ));
+                        }
+                    });
+                });
+            });
+            egui::CollapsingHeader::new("Target").show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        ui.label("Symbol");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!("{:?}", symbol));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Brokerage");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance.brokerage.target.stock_value(symbol)
+                            ));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Traditional IRA");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance.traditional_ira.target.stock_value(symbol)
+                            ));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Roth IRA");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance.roth_ira.target.stock_value(symbol)
+                            ));
+                        }
+                    });
+                });
+            });
+            egui::CollapsingHeader::new("Purchase").show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        ui.label("Symbol");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!("{:?}", symbol));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Brokerage");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance
+                                    .brokerage
+                                    .sale_purchases_needed
+                                    .stock_value(symbol)
+                            ));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Traditional IRA");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance
+                                    .traditional_ira
+                                    .sale_purchases_needed
+                                    .stock_value(symbol)
+                            ));
+                        }
+                    });
+                    ui.vertical(|ui| {
+                        ui.label("Roth IRA");
+                        for symbol in StockSymbol::list() {
+                            ui.label(format!(
+                                "{:?}",
+                                self.rebalance
+                                    .roth_ira
+                                    .sale_purchases_needed
+                                    .stock_value(symbol)
+                            ));
+                        }
+                    });
+                });
+            });
+
 
             ui.separator();
 
