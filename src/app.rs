@@ -184,6 +184,25 @@ impl eframe::App for VaporeApp {
                     });
             });
 
+            self.brokerage_holdings = self
+                .vanguard_holdings
+                .accounts
+                .get(&self.brokerage_account_num)
+                .unwrap_or(&ShareValues::default())
+                .clone();
+            self.traditional_holdings = self
+                .vanguard_holdings
+                .accounts
+                .get(&self.trad_account_num)
+                .unwrap_or(&ShareValues::default())
+                .clone();
+            self.roth_holdings = self
+                .vanguard_holdings
+                .accounts
+                .get(&self.roth_account_num)
+                .unwrap_or(&ShareValues::default())
+                .clone();
+
             ui.add(
                 egui::Slider::new(&mut self.brokerage_stock, 0..=100)
                     .text("Brokerage percentage stock"),
@@ -216,6 +235,7 @@ impl eframe::App for VaporeApp {
                     self.stock_quotes,
                 )
                 .unwrap();
+                println!("Rebalance: {:?}", self.rebalance);
             };
 
             egui::CollapsingHeader::new("Holdings").show(ui, |ui| {
@@ -338,8 +358,6 @@ impl eframe::App for VaporeApp {
                     });
                 });
             });
-
-
             ui.separator();
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {

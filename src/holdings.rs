@@ -1119,6 +1119,7 @@ impl Default for VanguardHoldings {
 
 /// AccountHoldings is a holder of current, target, and purchase/sales information for an account.
 /// It also creates a Display for this information.
+#[derive(Debug)]
 pub struct AccountHoldings {
     pub current: ShareValues,
     pub target: ShareValues,
@@ -1253,6 +1254,7 @@ impl fmt::Display for AccountHoldings {
 /// VanguardRebalance holds AccountHoldings structs for each account; brokerage, traditional IRA,
 /// and roth IRA.  Each AccountHoldings struct holds the information of current holdings, target
 /// holdings, and the amount of stocks needed to purchase/sell in order to rebalance
+#[derive(Debug)]
 pub struct VanguardRebalance {
     pub brokerage: AccountHoldings,
     pub traditional_ira: AccountHoldings,
