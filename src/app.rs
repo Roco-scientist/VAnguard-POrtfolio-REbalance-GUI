@@ -213,10 +213,12 @@ impl eframe::App for VaporeApp {
                 .unwrap_or(&ShareValues::default())
                 .clone();
 
-            ui.add(
-                egui::Slider::new(&mut self.brokerage_stock, 0..=100)
-                    .text("Brokerage percentage stock"),
-            );
+            if !self.use_brokerage_retirement {
+                ui.add(
+                    egui::Slider::new(&mut self.brokerage_stock, 0..=100)
+                        .text("Brokerage percentage stock"),
+                );
+            }
 
             ui.add(
                 egui::Slider::new(&mut self.retirement_year, 2020..=2100)
