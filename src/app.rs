@@ -16,7 +16,7 @@ pub struct VaporeApp {
     roth_account_num: u32,
     trad_account_num: u32,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    brokerage_cash_add: f32,
+    brokerage_cash_add: i32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_us_stock_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
@@ -36,7 +36,7 @@ pub struct VaporeApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     roth_int_bond_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    roth_cash_add: f32,
+    roth_cash_add: i32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_holdings: ShareValues,
     #[serde(skip)] // This how you opt-out of serialization of a field
@@ -48,7 +48,7 @@ pub struct VaporeApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     traditional_int_bond_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    traditional_cash_add: f32,
+    traditional_cash_add: i32,
     use_brokerage_retirement: bool,
     #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_holdings: ShareValues,
@@ -69,7 +69,7 @@ impl Default for VaporeApp {
             brokerage_account_num: 0,
             roth_account_num: 0,
             trad_account_num: 0,
-            brokerage_cash_add: 0.0,
+            brokerage_cash_add: 0,
             brokerage_us_stock_add: 0.0,
             brokerage_int_stock_add: 0.0,
             brokerage_us_bond_add: 0.0,
@@ -79,13 +79,13 @@ impl Default for VaporeApp {
             roth_us_bond_add: 0.0,
             roth_int_stock_add: 0.0,
             roth_int_bond_add: 0.0,
-            roth_cash_add: 0.0,
+            roth_cash_add: 0,
             traditional_holdings: ShareValues::new(),
             traditional_us_stock_add: 0.0,
             traditional_us_bond_add: 0.0,
             traditional_int_stock_add: 0.0,
             traditional_int_bond_add: 0.0,
-            traditional_cash_add: 0.0,
+            traditional_cash_add: 0,
             use_brokerage_retirement: false,
             brokerage_holdings: ShareValues::new(),
             rebalance: VanguardRebalance::default(),
@@ -229,11 +229,26 @@ impl eframe::App for VaporeApp {
                     .text("Birth year"),
             );
 
+            ui.add(
+                egui::Slider::new(&mut self.brokerage_cash_add, -100000..=100000)
+                    .text("Brokerage cash add/remove"),
+            );
+
+            ui.add(
+                egui::Slider::new(&mut self.traditional_cash_add, -100000..=100000)
+                    .text("Traditional IRA cash add/remove"),
+            );
+
+            ui.add(
+                egui::Slider::new(&mut self.roth_cash_add, -100000..=100000)
+                    .text("Roth IRA cash add/remove"),
+            );
+
             if ui.button("Update").clicked() {
                 block_on(self.stock_quotes.add_missing_quotes()).unwrap();
                 self.rebalance = to_buy(
                     self.brokerage_stock as f32,
-                    self.brokerage_cash_add,
+                    self.brokerage_cash_add as f32,
                     self.brokerage_us_stock_add,
                     self.brokerage_int_stock_add,
                     self.brokerage_us_bond_add,
@@ -244,13 +259,13 @@ impl eframe::App for VaporeApp {
                     self.roth_us_bond_add,
                     self.roth_int_stock_add,
                     self.roth_int_bond_add,
-                    self.roth_cash_add,
+                    self.roth_cash_add as f32,
                     self.traditional_holdings,
                     self.traditional_us_stock_add,
                     self.traditional_us_bond_add,
                     self.traditional_int_stock_add,
                     self.traditional_int_bond_add,
-                    self.traditional_cash_add,
+                    self.traditional_cash_add as f32,
                     self.use_brokerage_retirement,
                     self.brokerage_holdings,
                     self.stock_quotes,
