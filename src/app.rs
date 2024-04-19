@@ -17,7 +17,6 @@ pub struct VaporeApp {
     trad_account_num: u32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_cash_add: i32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_us_stock_add: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_int_stock_add: f32,
@@ -242,6 +241,11 @@ impl eframe::App for VaporeApp {
             ui.add(
                 egui::Slider::new(&mut self.roth_cash_add, -100000..=100000)
                     .text("Roth IRA cash add/remove"),
+            );
+
+            ui.add(
+                egui::Slider::new(&mut self.brokerage_us_stock_add, 0.0..=10000000.00)
+                    .text("US stock value outside Vanguard"),
             );
 
             if ui.button("Update").clicked() {
