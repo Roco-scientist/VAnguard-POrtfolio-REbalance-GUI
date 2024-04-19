@@ -1,8 +1,9 @@
 use crate::{
-    calc::to_buy,
+    calc,
     holdings::{parse_csv_download, ShareValues, StockSymbol, VanguardHoldings, VanguardRebalance},
 };
 use futures::executor::block_on;
+use std::collections::HashMap;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -15,6 +16,8 @@ pub struct VaporeApp {
     brokerage_account_num: u32,
     roth_account_num: u32,
     trad_account_num: u32,
+    distribution_table: HashMap<u32, f32>,
+    distribution_year: u32,
     #[serde(skip)] // This how you opt-out of serialization of a field
     brokerage_cash_add: i32,
     brokerage_us_stock_add: f32,
@@ -68,6 +71,8 @@ impl Default for VaporeApp {
             brokerage_account_num: 0,
             roth_account_num: 0,
             trad_account_num: 0,
+            distribution_table: HashMap::new(),
+            distribution_year: 2025,
             brokerage_cash_add: 0,
             brokerage_us_stock_add: 0.0,
             brokerage_int_stock_add: 0.0,
@@ -225,10 +230,37 @@ impl eframe::App for VaporeApp {
                     .text("Retirement year"),
             );
 
-            ui.add(
-                egui::Slider::new(&mut self.birth_year, 1940..=2100)
-                    .text("Birth year"),
-            );
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::Slider::new(&mut self.birth_year, 1940..=2100)
+                        .text("Birth year"),
+                );
+
+                if ui.button("Load distribution table").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        self.distribution_table = calc::get_distribution_table(path).unwrap();
+                    };
+                };
+
+                ui.add(
+                    egui::Slider::new(&mut self.distribution_year, 2020..=2100)
+                        .text("Distribution year"),
+                );
+                let age = self.distribution_year - self.birth_year;
+                if age > 72 {
+                    if let Some(traditional_value) = block_on(self.vanguard_holdings.eoy_value(self.distribution_year, self.trad_account_num)).unwrap() {
+                        let minimum_distribution_div = self.distribution_table.get(&age).unwrap_or(&0.0).clone();
+                        if minimum_distribution_div != 0.0 {
+                            let minimum_distribution = traditional_value / minimum_distribution_div;
+                            let so_far = self.vanguard_holdings.distributions(&self.trad_account_num);
+                            let left = (minimum_distribution - so_far).max(0.0);
+                            ui.label(format!("Minimum distribution: {:.2}", minimum_distribution));
+                            ui.label(format!("So far: {:.2}", so_far));
+                            ui.label(format!("To go: {:.2}", left));
+                        }
+                    }
+                }
+            });
 
             ui.add(
                 egui::Slider::new(&mut self.brokerage_cash_add, -100000..=100000)
@@ -252,7 +284,7 @@ impl eframe::App for VaporeApp {
 
             if ui.button("Update").clicked() {
                 block_on(self.stock_quotes.add_missing_quotes()).unwrap();
-                self.rebalance = to_buy(
+                self.rebalance = calc::to_buy(
                     self.brokerage_stock as f32,
                     self.brokerage_cash_add as f32,
                     self.brokerage_us_stock_add,
