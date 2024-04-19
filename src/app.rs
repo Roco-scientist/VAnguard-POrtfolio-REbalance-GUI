@@ -9,70 +9,71 @@ use std::collections::HashMap;
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct VaporeApp {
-    // Example stuff:
-    birth_year: u32,
-    retirement_year: i32,
-    brokerage_stock: u32,
-    brokerage_account_num: u32,
-    roth_account_num: u32,
-    trad_account_num: u32,
+    profile_name: String,
+    birth_year: HashMap<String, u32>,
+    retirement_year: HashMap<String, i32>,
+    brokerage_stock: HashMap<String, u32>,
+    brokerage_account_num: HashMap<String, u32>,
+    roth_account_num: HashMap<String, u32>,
+    trad_account_num: HashMap<String, u32>,
     distribution_table: HashMap<u32, f32>,
-    distribution_year: u32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    distribution_year: HashMap<String, u32>,
+    #[serde(skip)]
     brokerage_cash_add: i32,
     brokerage_us_stock_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     brokerage_int_stock_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     brokerage_us_bond_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     brokerage_int_bond_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     roth_holdings: ShareValues,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     roth_us_stock_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     roth_us_bond_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     roth_int_stock_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     roth_int_bond_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     roth_cash_add: i32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     traditional_holdings: ShareValues,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     traditional_us_stock_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     traditional_us_bond_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     traditional_int_stock_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     traditional_int_bond_add: f32,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     traditional_cash_add: i32,
     use_brokerage_retirement: bool,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     brokerage_holdings: ShareValues,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     rebalance: VanguardRebalance,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     vanguard_holdings: VanguardHoldings,
-    #[serde(skip)] // This how you opt-out of serialization of a field
+    #[serde(skip)]
     stock_quotes: ShareValues,
 }
 
 impl Default for VaporeApp {
     fn default() -> Self {
         Self {
-            birth_year: 1980,
-            retirement_year: 2025,
-            brokerage_stock: 65,
-            brokerage_account_num: 0,
-            roth_account_num: 0,
-            trad_account_num: 0,
+            profile_name: String::default(),
+            birth_year: HashMap::new(),
+            retirement_year: HashMap::new(),
+            brokerage_stock: HashMap::new(),
+            brokerage_account_num: HashMap::new(),
+            roth_account_num: HashMap::new(),
+            trad_account_num: HashMap::new(),
             distribution_table: HashMap::new(),
-            distribution_year: 2025,
+            distribution_year: HashMap::new(),
             brokerage_cash_add: 0,
             brokerage_us_stock_add: 0.0,
             brokerage_int_stock_add: 0.0,
@@ -148,6 +149,103 @@ impl eframe::App for VaporeApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
             ui.heading("VAnguard POrtfolio REbalance");
+            egui::CollapsingHeader::new("Profile").show(ui, |ui| {
+                egui::ComboBox::from_id_source("Brokerage")
+                    .selected_text(&self.profile_name)
+                    .show_ui(ui, |ui| {
+                        for profile in self.birth_year.keys() {
+                            ui.selectable_value(&mut self.profile_name, profile.clone(), profile);
+                        }
+                    });
+                ui.horizontal(|ui| {
+                    ui.add(egui::TextEdit::singleline(&mut self.profile_name));
+                    if ui.button("Create").clicked() {
+                        if !self.birth_year.contains_key(&self.profile_name) {
+                            self.birth_year.insert(self.profile_name.clone(), 1980);
+                        };
+                        if !self.retirement_year.contains_key(&self.profile_name) {
+                            self.retirement_year.insert(self.profile_name.clone(), 2050);
+                        };
+                        if !self.brokerage_stock.contains_key(&self.profile_name) {
+                            self.brokerage_stock.insert(self.profile_name.clone(), 65);
+                        };
+                        if !self.brokerage_account_num.contains_key(&self.profile_name) {
+                            self.brokerage_account_num.insert(self.profile_name.clone(), 0);
+                        };
+                        if !self.roth_account_num.contains_key(&self.profile_name) {
+                            self.roth_account_num.insert(self.profile_name.clone(), 0);
+                        };
+                        if !self.trad_account_num.contains_key(&self.profile_name) {
+                            self.trad_account_num.insert(self.profile_name.clone(), 0);
+                        };
+                        if !self.distribution_year.contains_key(&self.profile_name) {
+                            self.distribution_year.insert(self.profile_name.clone(), 0);
+                        };
+                    };
+                    if ui.button("Delete").clicked() {
+                        self.birth_year.remove(&self.profile_name);
+                        self.retirement_year.remove(&self.profile_name);
+                        self.brokerage_stock.remove(&self.profile_name);
+                        self.brokerage_account_num.remove(&self.profile_name);
+                        self.roth_account_num.remove(&self.profile_name);
+                        self.trad_account_num.remove(&self.profile_name);
+                        self.distribution_year.remove(&self.profile_name);
+                    }
+                });
+                if let Some(profile_account_num) =
+                    self.brokerage_account_num.get_mut(&self.profile_name)
+                {
+                    ui.horizontal(|ui| {
+                        ui.label("Brokerage account number:");
+                        egui::ComboBox::from_id_source("Brokerage")
+                            .selected_text(profile_account_num.to_string())
+                            .show_ui(ui, |ui| {
+                                for acct_num in self.vanguard_holdings.accounts.keys() {
+                                    ui.selectable_value(
+                                        &mut *profile_account_num,
+                                        *acct_num,
+                                        acct_num.to_string(),
+                                    );
+                                }
+                            });
+                        ui.checkbox(&mut self.use_brokerage_retirement, "Retirement");
+                    });
+                };
+                if let Some(profile_account_num) = self.trad_account_num.get_mut(&self.profile_name)
+                {
+                    ui.horizontal(|ui| {
+                        ui.label("Traditional IRA account number:");
+                        egui::ComboBox::from_id_source("Traditional")
+                            .selected_text(profile_account_num.to_string())
+                            .show_ui(ui, |ui| {
+                                for acct_num in self.vanguard_holdings.accounts.keys() {
+                                    ui.selectable_value(
+                                        &mut *profile_account_num,
+                                        *acct_num,
+                                        acct_num.to_string(),
+                                    );
+                                }
+                            });
+                    });
+                };
+                if let Some(profile_account_num) = self.roth_account_num.get_mut(&self.profile_name)
+                {
+                    ui.horizontal(|ui| {
+                        ui.label("Roth IRA account number:");
+                        egui::ComboBox::from_id_source("IRA")
+                            .selected_text(profile_account_num.to_string())
+                            .show_ui(ui, |ui| {
+                                for acct_num in self.vanguard_holdings.accounts.keys() {
+                                    ui.selectable_value(
+                                        &mut *profile_account_num,
+                                        *acct_num,
+                                        acct_num.to_string(),
+                                    );
+                                }
+                            });
+                    });
+                };
+            });
 
             if ui.button("Open Vanguard File").clicked() {
                 if let Some(path) = rfd::FileDialog::new().pick_file() {
@@ -155,86 +253,50 @@ impl eframe::App for VaporeApp {
                 };
             };
 
-            ui.horizontal(|ui| {
-                ui.label("Brokerage account number:");
-                egui::ComboBox::from_id_source("Brokerage")
-                    .selected_text(self.brokerage_account_num.to_string())
-                    .show_ui(ui, |ui| {
-                        for acct_num in self.vanguard_holdings.accounts.keys() {
-                            ui.selectable_value(
-                                &mut self.brokerage_account_num,
-                                *acct_num,
-                                acct_num.to_string(),
-                            );
-                        }
-                    });
-                ui.checkbox(&mut self.use_brokerage_retirement, "Retirement");
-            });
-            ui.horizontal(|ui| {
-                ui.label("Traditional IRA account number:");
-                egui::ComboBox::from_id_source("Traditional")
-                    .selected_text(self.trad_account_num.to_string())
-                    .show_ui(ui, |ui| {
-                        for acct_num in self.vanguard_holdings.accounts.keys() {
-                            ui.selectable_value(
-                                &mut self.trad_account_num,
-                                *acct_num,
-                                acct_num.to_string(),
-                            );
-                        }
-                    });
-            });
-            ui.horizontal(|ui| {
-                ui.label("Roth IRA account number:");
-                egui::ComboBox::from_id_source("IRA")
-                    .selected_text(self.roth_account_num.to_string())
-                    .show_ui(ui, |ui| {
-                        for acct_num in self.vanguard_holdings.accounts.keys() {
-                            ui.selectable_value(
-                                &mut self.roth_account_num,
-                                *acct_num,
-                                acct_num.to_string(),
-                            );
-                        }
-                    });
-            });
-
-            self.brokerage_holdings = self
-                .vanguard_holdings
-                .accounts
-                .get(&self.brokerage_account_num)
-                .unwrap_or(&ShareValues::default())
-                .clone();
-            self.traditional_holdings = self
-                .vanguard_holdings
-                .accounts
-                .get(&self.trad_account_num)
-                .unwrap_or(&ShareValues::default())
-                .clone();
-            self.roth_holdings = self
-                .vanguard_holdings
-                .accounts
-                .get(&self.roth_account_num)
-                .unwrap_or(&ShareValues::default())
-                .clone();
+            if let Some(brokerage_account_num) = self.brokerage_account_num.get(&self.profile_name) {
+                self.brokerage_holdings = self
+                    .vanguard_holdings
+                    .accounts
+                    .get(brokerage_account_num)
+                    .unwrap_or(&ShareValues::default())
+                    .clone();
+            };
+            if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
+                self.traditional_holdings = self
+                    .vanguard_holdings
+                    .accounts
+                    .get(trad_account_num)
+                    .unwrap_or(&ShareValues::default())
+                    .clone();
+            };
+            if let Some(roth_account_num) = self.roth_account_num.get(&self.profile_name) {
+                self.roth_holdings = self
+                    .vanguard_holdings
+                    .accounts
+                    .get(roth_account_num)
+                    .unwrap_or(&ShareValues::default())
+                    .clone();
+            };
 
             if !self.use_brokerage_retirement {
-                ui.add(
-                    egui::Slider::new(&mut self.brokerage_stock, 0..=100)
-                        .text("Brokerage percentage stock"),
-                );
-            }
+                if let Some(brokerage_stock) = self.brokerage_stock.get_mut(&self.profile_name) {
+                    ui.add(
+                        egui::Slider::new(&mut *brokerage_stock, 0..=100)
+                            .text("Brokerage percentage stock"),
+                    );
+                };
+            };
 
-            ui.add(
-                egui::Slider::new(&mut self.retirement_year, 2020..=2100)
-                    .text("Retirement year"),
-            );
+            if let Some(retirement_year) = self.retirement_year.get_mut(&self.profile_name) {
+                ui.add(
+                    egui::Slider::new(&mut *retirement_year, 2020..=2100).text("Retirement year"),
+                );
+            };
 
             ui.horizontal(|ui| {
-                ui.add(
-                    egui::Slider::new(&mut self.birth_year, 1940..=2100)
-                        .text("Birth year"),
-                );
+                if let Some(birth_year) = self.birth_year.get_mut(&self.profile_name) {
+                    ui.add(egui::Slider::new(&mut *birth_year, 1940..=2100).text("Birth year"));
+                }
 
                 if ui.button("Load distribution table").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_file() {
@@ -242,24 +304,39 @@ impl eframe::App for VaporeApp {
                     };
                 };
 
-                ui.add(
-                    egui::Slider::new(&mut self.distribution_year, 2020..=2100)
-                        .text("Distribution year"),
-                );
-                let age = self.distribution_year - self.birth_year;
-                if age > 72 {
-                    if let Some(traditional_value) = block_on(self.vanguard_holdings.eoy_value(self.distribution_year, self.trad_account_num)).unwrap() {
-                        let minimum_distribution_div = self.distribution_table.get(&age).unwrap_or(&0.0).clone();
-                        if minimum_distribution_div != 0.0 {
-                            let minimum_distribution = traditional_value / minimum_distribution_div;
-                            let so_far = self.vanguard_holdings.distributions(&self.trad_account_num);
-                            let left = (minimum_distribution - so_far).max(0.0);
-                            ui.label(format!("Minimum distribution: {:.2}", minimum_distribution));
-                            ui.label(format!("So far: {:.2}", so_far));
-                            ui.label(format!("To go: {:.2}", left));
-                        }
-                    }
+                if let Some(distribution_year) = self.distribution_year.get_mut(&self.profile_name) {
+                    ui.add(
+                        egui::Slider::new(&mut *distribution_year, 2020..=2100)
+                            .text("Distribution year"),
+                    );
                 }
+                if let Some(birth_year) = self.birth_year.get(&self.profile_name) {
+                    if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
+                        if let Some(distribution_year) = self.distribution_year.get(&self.profile_name) {
+                            let age = distribution_year - birth_year;
+                            if age > 72 {
+                                if let Some(traditional_value) = block_on(
+                                    self.vanguard_holdings
+                                        .eoy_value(distribution_year.clone(), trad_account_num.clone()),
+                                )
+                                .unwrap()
+                                {
+                                    let minimum_distribution_div =
+                                        self.distribution_table.get(&age).unwrap_or(&0.0).clone();
+                                    if minimum_distribution_div != 0.0 {
+                                        let minimum_distribution = traditional_value / minimum_distribution_div;
+                                        let so_far =
+                                            self.vanguard_holdings.distributions(trad_account_num);
+                                        let left = (minimum_distribution - so_far).max(0.0);
+                                        ui.label(format!("Minimum distribution: {:.2}", minimum_distribution));
+                                        ui.label(format!("So far: {:.2}", so_far));
+                                        ui.label(format!("To go: {:.2}", left));
+                                    }
+                                }
+                            };
+                        };
+                    };
+                };
             });
 
             ui.add(
@@ -282,34 +359,38 @@ impl eframe::App for VaporeApp {
                     .text("US stock value outside Vanguard"),
             );
 
-            if ui.button("Update").clicked() {
-                block_on(self.stock_quotes.add_missing_quotes()).unwrap();
-                self.rebalance = calc::to_buy(
-                    self.brokerage_stock as f32,
-                    self.brokerage_cash_add as f32,
-                    self.brokerage_us_stock_add,
-                    self.brokerage_int_stock_add,
-                    self.brokerage_us_bond_add,
-                    self.brokerage_int_bond_add,
-                    self.retirement_year,
-                    self.roth_holdings,
-                    self.roth_us_stock_add,
-                    self.roth_us_bond_add,
-                    self.roth_int_stock_add,
-                    self.roth_int_bond_add,
-                    self.roth_cash_add as f32,
-                    self.traditional_holdings,
-                    self.traditional_us_stock_add,
-                    self.traditional_us_bond_add,
-                    self.traditional_int_stock_add,
-                    self.traditional_int_bond_add,
-                    self.traditional_cash_add as f32,
-                    self.use_brokerage_retirement,
-                    self.brokerage_holdings,
-                    self.stock_quotes,
-                )
-                .unwrap();
-            };
+            if let Some(brokerage_stock) = self.brokerage_stock.get(&self.profile_name) {
+                if let Some(retirement_year) = self.retirement_year.get(&self.profile_name) {
+                    if ui.button("Update").clicked() {
+                        block_on(self.stock_quotes.add_missing_quotes()).unwrap();
+                        self.rebalance = calc::to_buy(
+                            *brokerage_stock as f32,
+                            self.brokerage_cash_add as f32,
+                            self.brokerage_us_stock_add,
+                            self.brokerage_int_stock_add,
+                            self.brokerage_us_bond_add,
+                            self.brokerage_int_bond_add,
+                            *retirement_year,
+                            self.roth_holdings,
+                            self.roth_us_stock_add,
+                            self.roth_us_bond_add,
+                            self.roth_int_stock_add,
+                            self.roth_int_bond_add,
+                            self.roth_cash_add as f32,
+                            self.traditional_holdings,
+                            self.traditional_us_stock_add,
+                            self.traditional_us_bond_add,
+                            self.traditional_int_stock_add,
+                            self.traditional_int_bond_add,
+                            self.traditional_cash_add as f32,
+                            self.use_brokerage_retirement,
+                            self.brokerage_holdings,
+                            self.stock_quotes,
+                        )
+                        .unwrap();
+                    };
+                }
+            }
 
             egui::CollapsingHeader::new("Holdings").show(ui, |ui| {
                 ui.horizontal(|ui| {
