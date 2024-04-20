@@ -4,6 +4,7 @@ use crate::{
 };
 use futures::executor::block_on;
 use std::collections::HashMap;
+use chrono::{Datelike, Local};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -17,7 +18,8 @@ pub struct VaporeApp {
     roth_account_num: HashMap<String, u32>,
     trad_account_num: HashMap<String, u32>,
     distribution_table: HashMap<u32, f32>,
-    distribution_year: HashMap<String, u32>,
+    #[serde(skip)]
+    distribution_year: u32,
     #[serde(skip)]
     brokerage_cash_add: i32,
     brokerage_us_stock_add: f32,
@@ -73,7 +75,7 @@ impl Default for VaporeApp {
             roth_account_num: HashMap::new(),
             trad_account_num: HashMap::new(),
             distribution_table: HashMap::new(),
-            distribution_year: HashMap::new(),
+            distribution_year: Local::now().year() as u32,
             brokerage_cash_add: 0,
             brokerage_us_stock_add: 0.0,
             brokerage_int_stock_add: 0.0,
@@ -149,6 +151,13 @@ impl eframe::App for VaporeApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
             ui.heading("VAnguard POrtfolio REbalance");
+
+            if ui.button("Open Vanguard File").clicked() {
+                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    self.vanguard_holdings = block_on(parse_csv_download(path)).unwrap();
+                };
+            };
+
             egui::CollapsingHeader::new("Profile").show(ui, |ui| {
                 egui::ComboBox::from_id_source("Brokerage")
                     .selected_text(&self.profile_name)
@@ -178,9 +187,6 @@ impl eframe::App for VaporeApp {
                         if !self.trad_account_num.contains_key(&self.profile_name) {
                             self.trad_account_num.insert(self.profile_name.clone(), 0);
                         };
-                        if !self.distribution_year.contains_key(&self.profile_name) {
-                            self.distribution_year.insert(self.profile_name.clone(), 0);
-                        };
                     };
                     if ui.button("Delete").clicked() {
                         self.birth_year.remove(&self.profile_name);
@@ -189,9 +195,19 @@ impl eframe::App for VaporeApp {
                         self.brokerage_account_num.remove(&self.profile_name);
                         self.roth_account_num.remove(&self.profile_name);
                         self.trad_account_num.remove(&self.profile_name);
-                        self.distribution_year.remove(&self.profile_name);
                     }
                 });
+
+                if let Some(birth_year) = self.birth_year.get_mut(&self.profile_name) {
+                    ui.add(egui::Slider::new(&mut *birth_year, 1940..=2100).text("Birth year"));
+                }
+
+                if let Some(retirement_year) = self.retirement_year.get_mut(&self.profile_name) {
+                    ui.add(
+                        egui::Slider::new(&mut *retirement_year, 2020..=2100).text("Retirement year"),
+                    );
+                };
+
                 if let Some(profile_account_num) =
                     self.brokerage_account_num.get_mut(&self.profile_name)
                 {
@@ -247,11 +263,6 @@ impl eframe::App for VaporeApp {
                 };
             });
 
-            if ui.button("Open Vanguard File").clicked() {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
-                    self.vanguard_holdings = block_on(parse_csv_download(path)).unwrap();
-                };
-            };
 
             if let Some(brokerage_account_num) = self.brokerage_account_num.get(&self.profile_name) {
                 self.brokerage_holdings = self
@@ -287,16 +298,7 @@ impl eframe::App for VaporeApp {
                 };
             };
 
-            if let Some(retirement_year) = self.retirement_year.get_mut(&self.profile_name) {
-                ui.add(
-                    egui::Slider::new(&mut *retirement_year, 2020..=2100).text("Retirement year"),
-                );
-            };
-
             ui.horizontal(|ui| {
-                if let Some(birth_year) = self.birth_year.get_mut(&self.profile_name) {
-                    ui.add(egui::Slider::new(&mut *birth_year, 1940..=2100).text("Birth year"));
-                }
 
                 if ui.button("Load distribution table").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_file() {
@@ -304,20 +306,19 @@ impl eframe::App for VaporeApp {
                     };
                 };
 
-                if let Some(distribution_year) = self.distribution_year.get_mut(&self.profile_name) {
-                    ui.add(
-                        egui::Slider::new(&mut *distribution_year, 2020..=2100)
-                            .text("Distribution year"),
-                    );
-                }
+                let last_year = Local::now().year() as u32 - 1;
+                let next_year = last_year + 2;
+                ui.add(
+                    egui::Slider::new(&mut self.distribution_year, last_year..=next_year)
+                        .text("Distribution year"),
+                );
                 if let Some(birth_year) = self.birth_year.get(&self.profile_name) {
                     if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
-                        if let Some(distribution_year) = self.distribution_year.get(&self.profile_name) {
-                            let age = distribution_year - birth_year;
+                            let age = self.distribution_year - birth_year;
                             if age > 72 {
                                 if let Some(traditional_value) = block_on(
                                     self.vanguard_holdings
-                                        .eoy_value(distribution_year.clone(), trad_account_num.clone()),
+                                        .eoy_value(self.distribution_year, trad_account_num.clone()),
                                 )
                                 .unwrap()
                                 {
@@ -334,7 +335,6 @@ impl eframe::App for VaporeApp {
                                     }
                                 }
                             };
-                        };
                     };
                 };
             });
