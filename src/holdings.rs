@@ -80,10 +80,7 @@ impl StockSymbol {
             "VTI" => StockSymbol::VTI,
             "VTIVX" => StockSymbol::VTIVX,
             "" => StockSymbol::Empty,
-            _ => {
-                eprintln!("{} is not supported within this algorithm\n", symbol);
-                StockSymbol::Other(symbol.to_string())
-            }
+            _ => StockSymbol::Other(symbol.to_string()),
         }
     }
 
@@ -1099,10 +1096,8 @@ impl VanguardHoldings {
             }
         }
         if !enough_transaction {
-            eprintln!("Possibly not enough history in the downloaded Vanguard CSV to accurately calculate end of year holdings")
-        }
-        if total_transactions == 0 {
-            eprintln!("No transactions found to calculate EOY holdings for minimum distribution");
+            None
+        } else if total_transactions == 0 {
             None
         } else {
             Some(eoy_holdings)
@@ -1384,13 +1379,7 @@ impl TransactionType {
             "Sweep out" => TransactionType::SWEEPOUT,
             "Sweep in" => TransactionType::SWEEPIN,
             "Distribution" => TransactionType::DISTRIBUTION,
-            _ => {
-                eprintln!(
-                    "{} is not supported within this algorithm\n",
-                    transaction_type
-                );
-                TransactionType::Other(transaction_type.to_string())
-            }
+            _ => TransactionType::Other(transaction_type.to_string()),
         }
     }
 }

@@ -334,7 +334,7 @@ impl eframe::App for VaporeApp {
                 if let Some(birth_year) = self.birth_year.get(&self.profile_name) {
                     if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
                             let age = self.distribution_year - birth_year;
-                            if age > 72 {
+                            if age > self.distribution_table.keys().min().unwrap_or(&70).clone() {
                                 if let Some(traditional_value) = block_on(
                                     self.vanguard_holdings
                                         .eoy_value(self.distribution_year, trad_account_num.clone()),
@@ -352,7 +352,9 @@ impl eframe::App for VaporeApp {
                                         ui.label(format!("So far: {:.2}", so_far));
                                         ui.label(format!("To go: {:.2}", left));
                                     }
-                                }
+                                }else{
+                                    ui.label("More transaction history needed");
+                                };
                             };
                     };
                 };
