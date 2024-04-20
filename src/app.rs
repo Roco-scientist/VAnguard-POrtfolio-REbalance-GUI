@@ -298,6 +298,26 @@ impl eframe::App for VaporeApp {
                 };
             };
 
+            ui.add(
+                egui::Slider::new(&mut self.brokerage_us_stock_add, 0.0..=10000000.00)
+                    .text("US stock value outside Vanguard"),
+            );
+
+            ui.add(
+                egui::Slider::new(&mut self.brokerage_cash_add, -100000..=100000)
+                    .text("Brokerage cash add/remove"),
+            );
+
+            ui.add(
+                egui::Slider::new(&mut self.roth_cash_add, -100000..=100000)
+                    .text("Roth IRA cash add/remove"),
+            );
+
+            ui.add(
+                egui::Slider::new(&mut self.traditional_cash_add, -100000..=100000)
+                    .text("Traditional IRA cash add/remove"),
+            );
+
             ui.horizontal(|ui| {
 
                 if ui.button("Load distribution table").clicked() {
@@ -306,12 +326,11 @@ impl eframe::App for VaporeApp {
                     };
                 };
 
-                let last_year = Local::now().year() as u32 - 1;
-                let next_year = last_year + 2;
-                ui.add(
-                    egui::Slider::new(&mut self.distribution_year, last_year..=next_year)
-                        .text("Distribution year"),
-                );
+                let current_year = Local::now().year() as u32;
+                let last_year = current_year - 1;
+                ui.label("Distribution year:");
+                ui.selectable_value(&mut self.distribution_year, last_year, last_year.to_string());
+                ui.selectable_value(&mut self.distribution_year, current_year, current_year.to_string());
                 if let Some(birth_year) = self.birth_year.get(&self.profile_name) {
                     if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
                             let age = self.distribution_year - birth_year;
@@ -338,26 +357,6 @@ impl eframe::App for VaporeApp {
                     };
                 };
             });
-
-            ui.add(
-                egui::Slider::new(&mut self.brokerage_cash_add, -100000..=100000)
-                    .text("Brokerage cash add/remove"),
-            );
-
-            ui.add(
-                egui::Slider::new(&mut self.traditional_cash_add, -100000..=100000)
-                    .text("Traditional IRA cash add/remove"),
-            );
-
-            ui.add(
-                egui::Slider::new(&mut self.roth_cash_add, -100000..=100000)
-                    .text("Roth IRA cash add/remove"),
-            );
-
-            ui.add(
-                egui::Slider::new(&mut self.brokerage_us_stock_add, 0.0..=10000000.00)
-                    .text("US stock value outside Vanguard"),
-            );
 
             if let Some(brokerage_stock) = self.brokerage_stock.get(&self.profile_name) {
                 if let Some(retirement_year) = self.retirement_year.get(&self.profile_name) {
