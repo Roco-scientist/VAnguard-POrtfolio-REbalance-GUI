@@ -27,8 +27,6 @@ lazy_static! {
         m.insert(StockSymbol::VWO, "Emerging markets stock");
         m.insert(StockSymbol::BNDX, "Total international bond");
         m.insert(StockSymbol::VTIP, "Inflation protected securities");
-        m.insert(StockSymbol::VTI, "Total domestic stock");
-        m.insert(StockSymbol::VTIVX, "2045 Retirement fund");
         m
     };
 }
@@ -48,8 +46,6 @@ pub enum StockSymbol {
     VTC,
     VV,
     VMFXX,
-    VTI,
-    VTIVX,
     Empty,
     Other(String),
 }
@@ -77,8 +73,6 @@ impl StockSymbol {
             "VTC" => StockSymbol::VTC,
             "VV" => StockSymbol::VV,
             "VMFXX" => StockSymbol::VMFXX,
-            "VTI" => StockSymbol::VTI,
-            "VTIVX" => StockSymbol::VTIVX,
             "" => StockSymbol::Empty,
             _ => StockSymbol::Other(symbol.to_string()),
         }
@@ -106,7 +100,7 @@ impl StockSymbol {
         }
     }
 
-    pub fn list() -> [StockSymbol; 11] {
+    pub fn list() -> [StockSymbol; 9] {
         [
             StockSymbol::VV,
             StockSymbol::VO,
@@ -117,8 +111,6 @@ impl StockSymbol {
             StockSymbol::VWO,
             StockSymbol::BNDX,
             StockSymbol::VTIP,
-            StockSymbol::VTI,
-            StockSymbol::VTIVX,
         ]
     }
 }
@@ -148,8 +140,6 @@ pub fn all_stock_descriptions() -> String {
         StockSymbol::VWO,
         StockSymbol::BNDX,
         StockSymbol::VTIP,
-        StockSymbol::VTI,
-        StockSymbol::VTIVX,
     ] {
         descriptions.push_str(&symbol.description());
         descriptions.push('\n')
@@ -341,13 +331,10 @@ pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
         StockSymbol::VXUS => "VXUS",
         StockSymbol::BNDX => "BNDX",
         StockSymbol::VTIP => "VTIP",
-        StockSymbol::VTI => "VTI",
-        StockSymbol::VTIVX => "VTIVX",
         _ => "none",
     };
     if stock_str == "none" {
-        eprintln!("Stock symbol not supported for yahoo retrieval");
-        Ok(0.0)
+        Ok(1.0)
     } else {
         let provider = yahoo::YahooConnector::new();
         let response_err = provider
@@ -382,13 +369,10 @@ pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result
         StockSymbol::VXUS => "VXUS",
         StockSymbol::BNDX => "BNDX",
         StockSymbol::VTIP => "VTIP",
-        StockSymbol::VTI => "VTI",
-        StockSymbol::VTIVX => "VTIVX",
         _ => "none",
     };
     if stock_str == "none" {
-        eprintln!("Stock symbol not supported for yahoo retrieval");
-        Ok(0.0)
+        Ok(1.0)
     } else {
         let provider = yahoo::YahooConnector::new();
         let format = format_description!(
@@ -424,9 +408,8 @@ pub struct ShareValues {
     vtc: f32,
     vv: f32,
     vtip: f32,
-    vti: f32,
-    vtivx: f32,
     vmfxx: f32,
+    other: f32,
     outside_bond: f32,
     outside_stock: f32,
 }
@@ -446,14 +429,13 @@ impl ShareValues {
             vxus: 0.0,
             bndx: 0.0,
             vtip: 0.0,
-            vti: 0.0,
-            vtivx: 0.0,
             bnd: 0.0,
             vwo: 0.0,
             vo: 0.0,
             vb: 0.0,
             vtc: 0.0,
             vv: 0.0,
+            other: 0.0,
             vmfxx: 0.0,
             outside_bond: 0.0,
             outside_stock: 0.0,
@@ -465,8 +447,6 @@ impl ShareValues {
             self.vxus,
             self.bndx,
             self.vtip,
-            self.vti,
-            self.vtivx,
             self.bnd,
             self.vwo,
             self.vo,
@@ -497,8 +477,6 @@ impl ShareValues {
             vxus: 1.0,
             bndx: 1.0,
             vtip: 1.0,
-            vti: 1.0,
-            vtivx: 1.0,
             bnd: 1.0,
             vwo: 1.0,
             vo: 1.0,
@@ -506,6 +484,7 @@ impl ShareValues {
             vtc: 1.0,
             vv: 1.0,
             vmfxx: 1.0,
+            other: 1.0,
             outside_bond: 1.0,
             outside_stock: 1.0,
         }
@@ -522,8 +501,6 @@ impl ShareValues {
             StockSymbol::VWO,
             StockSymbol::BNDX,
             StockSymbol::VTIP,
-            StockSymbol::VTI,
-            StockSymbol::VTIVX,
         ] {
             if self.stock_value(stock_symbol.clone()) == 1.0 {
                 let new_quote = get_yahoo_quote(stock_symbol.clone()).await?;
@@ -544,8 +521,6 @@ impl ShareValues {
             StockSymbol::VWO,
             StockSymbol::BNDX,
             StockSymbol::VTIP,
-            StockSymbol::VTI,
-            StockSymbol::VTIVX,
         ] {
             if self.stock_value(stock_symbol.clone()) == 1.0 {
                 let new_quote = get_yahoo_eoy_quote(stock_symbol.clone(), year).await?;
@@ -618,8 +593,7 @@ impl ShareValues {
             vtc: vtc_value,
             vv: vv_value,
             vtip: vtip_value,
-            vti: 0.0,
-            vtivx: 0.0,
+            other: 0.0,
             vmfxx: 0.0,
             outside_bond: other_int_bond_value + other_us_bond_value,
             outside_stock: other_us_stock_value + other_int_stock_value,
@@ -663,8 +637,6 @@ impl ShareValues {
             StockSymbol::VXUS => self.vxus = value,
             StockSymbol::BNDX => self.bndx = value,
             StockSymbol::VTIP => self.vtip = value,
-            StockSymbol::VTI => self.vti = value,
-            StockSymbol::VTIVX => self.vtivx = value,
             StockSymbol::BND => self.bnd = value,
             StockSymbol::VWO => self.vwo = value,
             StockSymbol::VO => self.vo = value,
@@ -673,7 +645,10 @@ impl ShareValues {
             StockSymbol::VV => self.vv = value,
             StockSymbol::VMFXX => self.vmfxx = value,
             StockSymbol::Empty => panic!("Stock symbol not set before adding value"),
-            StockSymbol::Other(_) => (),
+            StockSymbol::Other(_) => match add_type {
+                AddType::StockPrice => self.other = 1.0,
+                AddType::HoldingValue => self.other += value,
+            },
         }
     }
 
@@ -700,8 +675,6 @@ impl ShareValues {
             StockSymbol::VXUS => self.vxus = value,
             StockSymbol::BNDX => self.bndx = value,
             StockSymbol::VTIP => self.vtip = value,
-            StockSymbol::VTI => self.vti = value,
-            StockSymbol::VTIVX => self.vtivx = value,
             StockSymbol::BND => self.bnd = value,
             StockSymbol::VWO => self.vwo = value,
             StockSymbol::VO => self.vo = value,
@@ -739,8 +712,6 @@ impl ShareValues {
             StockSymbol::VXUS => self.vxus -= value,
             StockSymbol::BNDX => self.bndx -= value,
             StockSymbol::VTIP => self.vtip -= value,
-            StockSymbol::VTI => self.vti -= value,
-            StockSymbol::VTIVX => self.vtivx -= value,
             StockSymbol::BND => self.bnd -= value,
             StockSymbol::VWO => self.vwo -= value,
             StockSymbol::VO => self.vo -= value,
@@ -776,8 +747,6 @@ impl ShareValues {
             StockSymbol::VXUS => self.vxus,
             StockSymbol::BNDX => self.bndx,
             StockSymbol::VTIP => self.vtip,
-            StockSymbol::VTI => self.vti,
-            StockSymbol::VTIVX => self.vtivx,
             StockSymbol::BND => self.bnd,
             StockSymbol::VWO => self.vwo,
             StockSymbol::VO => self.vo,
@@ -786,7 +755,7 @@ impl ShareValues {
             StockSymbol::VV => self.vv,
             StockSymbol::VMFXX => self.vmfxx,
             StockSymbol::Empty => panic!("Value retrieval not supported for empty stock symbol"),
-            StockSymbol::Other(symbol) => panic!("Value retrieval not supported for {}", symbol),
+            StockSymbol::Other(_) => self.other,
         }
     }
 
@@ -816,8 +785,7 @@ impl ShareValues {
             + self.vv
             + self.vmfxx
             + self.vtip
-            + self.vti
-            + self.vtivx
+            + self.other
     }
 
     /// percent_stock_bond_infl calculates the percent of stock, bond, and inflation protected
@@ -849,8 +817,6 @@ impl Add for ShareValues {
             vxus: self.vxus + other.vxus,
             bndx: self.bndx + other.bndx,
             vtip: self.vtip + other.vtip,
-            vti: self.vti + other.vti,
-            vtivx: self.vtivx + other.vtivx,
             bnd: self.bnd + other.bnd,
             vwo: self.vwo + other.vwo,
             vo: self.vo + other.vo,
@@ -858,6 +824,7 @@ impl Add for ShareValues {
             vtc: self.vtc + other.vtc,
             vv: self.vv + other.vv,
             vmfxx: self.vmfxx + other.vmfxx,
+            other: self.other + other.other,
             outside_bond: self.outside_bond + other.outside_bond,
             outside_stock: self.outside_stock + other.outside_stock,
         }
@@ -872,8 +839,6 @@ impl Sub for ShareValues {
             vxus: self.vxus - other.vxus,
             bndx: self.bndx - other.bndx,
             vtip: self.vtip - other.vtip,
-            vti: self.vti - other.vti,
-            vtivx: self.vtivx - other.vtivx,
             bnd: self.bnd - other.bnd,
             vwo: self.vwo - other.vwo,
             vo: self.vo - other.vo,
@@ -881,6 +846,7 @@ impl Sub for ShareValues {
             vtc: self.vtc - other.vtc,
             vv: self.vv - other.vv,
             vmfxx: self.vmfxx - other.vmfxx,
+            other: self.other - other.other,
             outside_bond: self.outside_bond - other.outside_bond,
             outside_stock: self.outside_stock - other.outside_stock,
         }
@@ -895,8 +861,6 @@ impl Div for ShareValues {
             vxus: self.vxus / other.vxus,
             bndx: self.bndx / other.bndx,
             vtip: self.vtip / other.vtip,
-            vti: self.vti / other.vti,
-            vtivx: self.vtivx / other.vtivx,
             bnd: self.bnd / other.bnd,
             vwo: self.vwo / other.vwo,
             vo: self.vo / other.vo,
@@ -904,6 +868,7 @@ impl Div for ShareValues {
             vtc: self.vtc / other.vtc,
             vv: self.vv / other.vv,
             vmfxx: self.vmfxx / other.vmfxx,
+            other: self.other / other.other,
             outside_bond: self.outside_bond / other.outside_bond,
             outside_stock: self.outside_stock / other.outside_stock,
         }
@@ -918,8 +883,6 @@ impl Mul for ShareValues {
             vxus: self.vxus * other.vxus,
             bndx: self.bndx * other.bndx,
             vtip: self.vtip * other.vtip,
-            vti: self.vti * other.vti,
-            vtivx: self.vtivx * other.vtivx,
             bnd: self.bnd * other.bnd,
             vwo: self.vwo * other.vwo,
             vo: self.vo * other.vo,
@@ -927,6 +890,7 @@ impl Mul for ShareValues {
             vtc: self.vtc * other.vtc,
             vv: self.vv * other.vv,
             vmfxx: self.vmfxx * other.vmfxx,
+            other: self.other * other.other,
             outside_bond: self.outside_bond * other.outside_bond,
             outside_stock: self.outside_stock * other.outside_stock,
         }
@@ -950,8 +914,6 @@ impl fmt::Display for ShareValues {
             VWO              {:.2}\n\
             BNDX             {:.2}\n\
             VTIP             {:.2}\n\
-            VTI              {:.2}\n\
-            VTIVX            {:.2}\n\
             -------------------------------\n\
             Cash             {:.2}\n\
             Total            {:.2}\n\
@@ -969,8 +931,6 @@ impl fmt::Display for ShareValues {
             self.vwo,
             self.bndx,
             self.vtip,
-            self.vti,
-            self.vtivx,
             self.vmfxx,
             self.total_value(),
             self.outside_stock,
@@ -1190,8 +1150,6 @@ impl fmt::Display for AccountHoldings {
             VWO      {:<15.2}${:<15.2}${:<15.2}\n\
             BNDX     {:<15.2}${:<15.2}${:<15.2}\n\
             VTIP     {:<15.2}${:<15.2}${:<15.2}\n\
-            VTI      {:<15.2}${:<15.2}${:<15.2}\n\
-            VTIVX    {:<15.2}${:<15.2}${:<15.2}\n\
             ------------------------------------------------------\n\
             Cash                    ${:<15.2}${:<15.2}\n\
             Total                   ${:<15.2}\n\
@@ -1226,12 +1184,6 @@ impl fmt::Display for AccountHoldings {
             self.sale_purchases_needed.vtip,
             self.current.vtip,
             self.target.vtip,
-            self.sale_purchases_needed.vti,
-            self.current.vti,
-            self.target.vti,
-            self.sale_purchases_needed.vtivx,
-            self.current.vtivx,
-            self.target.vtivx,
             self.current.vmfxx,
             self.target.vmfxx,
             self.current.total_value(),
