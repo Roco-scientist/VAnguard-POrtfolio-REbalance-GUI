@@ -109,18 +109,17 @@ impl StockSymbol {
         }
     }
 
-    pub fn list() -> [StockSymbol; 12] {
+    pub fn list() -> [StockSymbol; 11] {
         [
-            StockSymbol::VXUS,
-            StockSymbol::BNDX,
-            StockSymbol::VTIP,
-            StockSymbol::BND,
-            StockSymbol::VWO,
+            StockSymbol::VV,
             StockSymbol::VO,
             StockSymbol::VB,
             StockSymbol::VTC,
-            StockSymbol::VV,
-            StockSymbol::VMFXX,
+            StockSymbol::BND,
+            StockSymbol::VXUS,
+            StockSymbol::VWO,
+            StockSymbol::BNDX,
+            StockSymbol::VTIP,
             StockSymbol::VTI,
             StockSymbol::VTIVX,
         ]
