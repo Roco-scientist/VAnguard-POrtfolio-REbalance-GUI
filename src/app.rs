@@ -2,9 +2,9 @@ use crate::{
     calc,
     holdings::{parse_csv_download, ShareValues, StockSymbol, VanguardHoldings, VanguardRebalance},
 };
+use chrono::{Datelike, Local};
 use futures::executor::block_on;
 use std::collections::HashMap;
-use chrono::{Datelike, Local};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -179,7 +179,8 @@ impl eframe::App for VaporeApp {
                             self.brokerage_stock.insert(self.profile_name.clone(), 65);
                         };
                         if !self.brokerage_account_num.contains_key(&self.profile_name) {
-                            self.brokerage_account_num.insert(self.profile_name.clone(), 0);
+                            self.brokerage_account_num
+                                .insert(self.profile_name.clone(), 0);
                         };
                         if !self.roth_account_num.contains_key(&self.profile_name) {
                             self.roth_account_num.insert(self.profile_name.clone(), 0);
@@ -204,7 +205,8 @@ impl eframe::App for VaporeApp {
 
                 if let Some(retirement_year) = self.retirement_year.get_mut(&self.profile_name) {
                     ui.add(
-                        egui::Slider::new(&mut *retirement_year, 2020..=2100).text("Retirement year"),
+                        egui::Slider::new(&mut *retirement_year, 2020..=2100)
+                            .text("Retirement year"),
                     );
                 };
 
@@ -263,8 +265,8 @@ impl eframe::App for VaporeApp {
                 };
             });
 
-
-            if let Some(brokerage_account_num) = self.brokerage_account_num.get(&self.profile_name) {
+            if let Some(brokerage_account_num) = self.brokerage_account_num.get(&self.profile_name)
+            {
                 self.brokerage_holdings = self
                     .vanguard_holdings
                     .accounts
@@ -319,7 +321,6 @@ impl eframe::App for VaporeApp {
             );
 
             ui.horizontal(|ui| {
-
                 if ui.button("Load distribution table").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_file() {
                         self.distribution_table = calc::get_distribution_table(path).unwrap();
@@ -329,33 +330,45 @@ impl eframe::App for VaporeApp {
                 let current_year = Local::now().year() as u32;
                 let last_year = current_year - 1;
                 ui.label("Distribution year:");
-                ui.selectable_value(&mut self.distribution_year, last_year, last_year.to_string());
-                ui.selectable_value(&mut self.distribution_year, current_year, current_year.to_string());
+                ui.selectable_value(
+                    &mut self.distribution_year,
+                    last_year,
+                    last_year.to_string(),
+                );
+                ui.selectable_value(
+                    &mut self.distribution_year,
+                    current_year,
+                    current_year.to_string(),
+                );
                 if let Some(birth_year) = self.birth_year.get(&self.profile_name) {
                     if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
-                            let age = self.distribution_year - birth_year;
-                            if age > self.distribution_table.keys().min().unwrap_or(&70).clone() {
-                                if let Some(traditional_value) = block_on(
-                                    self.vanguard_holdings
-                                        .eoy_value(self.distribution_year, trad_account_num.clone()),
-                                )
-                                .unwrap()
-                                {
-                                    let minimum_distribution_div =
-                                        self.distribution_table.get(&age).unwrap_or(&0.0).clone();
-                                    if minimum_distribution_div != 0.0 {
-                                        let minimum_distribution = traditional_value / minimum_distribution_div;
-                                        let so_far =
-                                            self.vanguard_holdings.distributions(trad_account_num);
-                                        let left = (minimum_distribution - so_far).max(0.0);
-                                        ui.label(format!("Minimum distribution: {:.2}", minimum_distribution));
-                                        ui.label(format!("So far: {:.2}", so_far));
-                                        ui.label(format!("To go: {:.2}", left));
-                                    }
-                                }else{
-                                    ui.label("More transaction history needed");
-                                };
+                        let age = self.distribution_year - birth_year;
+                        if age > self.distribution_table.keys().min().unwrap_or(&70).clone() {
+                            if let Some(traditional_value) = block_on(
+                                self.vanguard_holdings
+                                    .eoy_value(self.distribution_year, trad_account_num.clone()),
+                            )
+                            .unwrap()
+                            {
+                                let minimum_distribution_div =
+                                    self.distribution_table.get(&age).unwrap_or(&0.0).clone();
+                                if minimum_distribution_div != 0.0 {
+                                    let minimum_distribution =
+                                        traditional_value / minimum_distribution_div;
+                                    let so_far =
+                                        self.vanguard_holdings.distributions(trad_account_num);
+                                    let left = (minimum_distribution - so_far).max(0.0);
+                                    ui.label(format!(
+                                        "Minimum distribution: {:.2}",
+                                        minimum_distribution
+                                    ));
+                                    ui.label(format!("So far: {:.2}", so_far));
+                                    ui.label(format!("To go: {:.2}", left));
+                                }
+                            } else {
+                                ui.label("More transaction history needed");
                             };
+                        };
                     };
                 };
             });
@@ -400,6 +413,7 @@ impl eframe::App for VaporeApp {
                         for symbol in StockSymbol::list() {
                             ui.label(format!("{:?}", symbol));
                         }
+                        ui.label("Other");
                     });
                     ui.vertical(|ui| {
                         ui.label("Brokerage");
@@ -409,6 +423,13 @@ impl eframe::App for VaporeApp {
                                 self.rebalance.brokerage.current.stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .brokerage
+                                .current
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                     ui.vertical(|ui| {
                         ui.label("Traditional IRA");
@@ -418,6 +439,13 @@ impl eframe::App for VaporeApp {
                                 self.rebalance.traditional_ira.current.stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .traditional_ira
+                                .current
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                     ui.vertical(|ui| {
                         ui.label("Roth IRA");
@@ -427,6 +455,13 @@ impl eframe::App for VaporeApp {
                                 self.rebalance.roth_ira.current.stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .roth_ira
+                                .current
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                 });
             });
@@ -437,6 +472,7 @@ impl eframe::App for VaporeApp {
                         for symbol in StockSymbol::list() {
                             ui.label(format!("{:?}", symbol));
                         }
+                        ui.label("Other");
                     });
                     ui.vertical(|ui| {
                         ui.label("Brokerage");
@@ -446,6 +482,13 @@ impl eframe::App for VaporeApp {
                                 self.rebalance.brokerage.target.stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .brokerage
+                                .target
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                     ui.vertical(|ui| {
                         ui.label("Traditional IRA");
@@ -455,6 +498,13 @@ impl eframe::App for VaporeApp {
                                 self.rebalance.traditional_ira.target.stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .traditional_ira
+                                .target
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                     ui.vertical(|ui| {
                         ui.label("Roth IRA");
@@ -464,6 +514,13 @@ impl eframe::App for VaporeApp {
                                 self.rebalance.roth_ira.target.stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .roth_ira
+                                .target
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                 });
             });
@@ -474,6 +531,7 @@ impl eframe::App for VaporeApp {
                         for symbol in StockSymbol::list() {
                             ui.label(format!("{:?}", symbol));
                         }
+                        ui.label("Other");
                     });
                     ui.vertical(|ui| {
                         ui.label("Brokerage");
@@ -486,6 +544,13 @@ impl eframe::App for VaporeApp {
                                     .stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .brokerage
+                                .sale_purchases_needed
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                     ui.vertical(|ui| {
                         ui.label("Traditional IRA");
@@ -498,6 +563,13 @@ impl eframe::App for VaporeApp {
                                     .stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .traditional_ira
+                                .sale_purchases_needed
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                     ui.vertical(|ui| {
                         ui.label("Roth IRA");
@@ -510,6 +582,13 @@ impl eframe::App for VaporeApp {
                                     .stock_value(symbol)
                             ));
                         }
+                        ui.label(format!(
+                            "{:.1}",
+                            self.rebalance
+                                .roth_ira
+                                .sale_purchases_needed
+                                .stock_value(StockSymbol::Other(String::default()))
+                        ));
                     });
                 });
             });
