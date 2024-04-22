@@ -683,7 +683,7 @@ impl ShareValues {
             StockSymbol::VV => self.vv = value,
             StockSymbol::VMFXX => self.vmfxx = value,
             StockSymbol::Empty => panic!("Stock symbol not set before adding value"),
-            StockSymbol::Other(_) => (),
+            StockSymbol::Other(_) => self.other = value,
         }
     }
 
@@ -720,7 +720,7 @@ impl ShareValues {
             StockSymbol::VV => self.vv -= value,
             StockSymbol::VMFXX => self.vmfxx -= value,
             StockSymbol::Empty => panic!("Stock symbol not set before adding value"),
-            StockSymbol::Other(_) => (),
+            StockSymbol::Other(_) => self.other -= value,
         }
     }
 
@@ -794,7 +794,7 @@ impl ShareValues {
     pub fn percent_stock_bond_infl(&self) -> (f32, f32, f32) {
         let total_bond = self.bndx + self.bnd + self.vtc + self.outside_bond;
         let total_stock = self.vwo + self.vo + self.vb + self.vv + self.vxus + self.outside_stock;
-        let total = self.total_value() - self.vmfxx + self.outside_bond + self.outside_stock;
+        let total = self.total_value() - self.vmfxx - self.other + self.outside_bond + self.outside_stock;
         (
             total_stock / total * 100.0,
             total_bond / total * 100.0,
@@ -1385,13 +1385,14 @@ pub async fn parse_csv_download(csv_path: PathBuf) -> Result<VanguardHoldings> {
                             }
                         }
                         if stock_info.finished() {
+                            
                             let account_value = accounts
                                 .entry(stock_info.account_number)
                                 .or_insert_with(ShareValues::new);
                             account_value
                                 .add_stockinfo_value(stock_info.clone(), AddType::HoldingValue);
                             quotes.add_stockinfo_value(stock_info.clone(), AddType::StockPrice);
-                        }
+                        } 
                     }
                 } else if transaction_header.is_empty() {
                     transaction_header = row_split
