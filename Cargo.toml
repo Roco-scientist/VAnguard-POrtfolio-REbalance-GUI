@@ -1,5 +1,6 @@
 [package]
 name = "vapore-gui"
+description = "Vangaurd portfolio rebalancing algorithm"
 version = "0.7.0"
 authors = ["Rory Coffey <coffeyrt@gmail.com>"]
 edition = "2021"
@@ -7,7 +8,7 @@ rust-version = "1.72"
 license = "Apache-2.0"
 readme = "README.md"
 keyword = ["Vanguard", "Investment"]
-categories = ["command-line-utilities"]
+categories = ["finance"]
 repository = "https://github.com/Roco-scientist/VAnguard-POrtfolio-REbalance-GUI"
 
 [[bin]]
