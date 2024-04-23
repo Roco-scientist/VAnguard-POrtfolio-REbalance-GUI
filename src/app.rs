@@ -5,6 +5,7 @@ use crate::{
 use chrono::{Datelike, Local};
 use futures::executor::block_on;
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use apca::{api::v2::account, ApiInfo, Client};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -307,6 +308,7 @@ impl eframe::App for VaporeApp {
                     egui::Slider::new(&mut self.brokerage_us_stock_add, 0.0..=10000000.00)
                         .text("US stock value outside Vanguard"),
                 );
+                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Add Alpaca").clicked() {
                     let key_id = std::env::var("APCA_API_KEY_ID").unwrap_or_else(|_| String::new());
                     let key = std::env::var("APCA_API_SECRET_KEY").unwrap_or_else(|_| String::new());
