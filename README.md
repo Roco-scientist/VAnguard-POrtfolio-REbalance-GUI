@@ -67,4 +67,4 @@ Download transaction file from within the vanguard account
   
 
 
-![App picture](./vapore.png)
+![App picture](./vapore-gui.png)
