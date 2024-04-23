@@ -5,6 +5,7 @@ use crate::{
 use chrono::{Datelike, Local};
 use futures::executor::block_on;
 use std::collections::HashMap;
+use apca::{api::v2::account, ApiInfo, Client};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -300,10 +301,29 @@ impl eframe::App for VaporeApp {
                 };
             };
 
-            ui.add(
-                egui::Slider::new(&mut self.brokerage_us_stock_add, 0.0..=10000000.00)
-                    .text("US stock value outside Vanguard"),
-            );
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::Slider::new(&mut self.brokerage_us_stock_add, 0.0..=10000000.00)
+                        .text("US stock value outside Vanguard"),
+                );
+                if ui.button("Add Alpaca").clicked() {
+                    let key_id = std::env::var("APCA_API_KEY_ID").unwrap_or_else(|_| String::new());
+                    let key = std::env::var("APCA_API_SECRET_KEY").unwrap_or_else(|_| String::new());
+                    if !key_id.is_empty() && !key.is_empty() {
+                        let api_info = ApiInfo::from_parts("https://api.alpaca.markets/", &key_id, &key)
+                            .unwrap();
+                        let client = Client::new(api_info);
+                        let alpaca_equity = block_on(client
+                            .issue::<account::Get>(&())).unwrap()
+                            .equity
+                            .to_f64()
+                            .unwrap() as f32;
+                        self.brokerage_us_stock_add += alpaca_equity;
+                    }else{
+                        ui.label("APCA_API_KEY_ID or APCA_API_SECRET_KEY missing");
+                    };
+                };
+            });
 
             ui.add(
                 egui::Slider::new(&mut self.brokerage_cash_add, -100000..=100000)
