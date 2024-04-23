@@ -23,6 +23,7 @@ pub struct VaporeApp {
     distribution_year: u32,
     #[serde(skip)]
     brokerage_cash_add: i32,
+    #[serde(skip)]
     brokerage_us_stock_add: f32,
     #[serde(skip)]
     brokerage_int_stock_add: f32,
