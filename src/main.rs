@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
         ..Default::default()
     };
     eframe::run_native(
-        "eframe template",
+        "VAPORE",
         native_options,
         Box::new(|cc| Box::new(vapore_gui::VaporeApp::new(cc))),
     )
