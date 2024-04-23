@@ -5,8 +5,7 @@ use anyhow::Result;
 //
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
 
     let native_options = eframe::NativeOptions {
