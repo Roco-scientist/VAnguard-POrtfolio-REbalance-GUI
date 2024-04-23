@@ -1,6 +1,6 @@
 [package]
 name = "vapore-gui"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Rory Coffey <coffeyrt@gmail.com>"]
 edition = "2021"
 rust-version = "1.72"
@@ -11,7 +11,7 @@ categories = ["command-line-utilities"]
 repository = "https://github.com/Roco-scientist/VAnguard-POrtfolio-REbalance-GUI"
 
 [[bin]]
-name = "vapore"
+name = "vapore-gui"
 test = false
 bench = false
 path = "src/main.rs"
