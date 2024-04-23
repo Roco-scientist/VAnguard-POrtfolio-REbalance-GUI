@@ -33,14 +33,13 @@ There is also an equal distribution among cap sizes in order to not be over inve
 ### Compile
 Install and compile from source  
 ```
-git clone https://github.com/Roco-scientist/VAnguard-POrtfolio-REbalance
-cd VAnguard-POrtfolio-REbalance
+git clone https://github.com/Roco-scientist/VAnguard-POrtfolio-REbalance-GUI
+cd VAnguard-POrtfolio-REbalance-GUI
 cargo install --path .
 ```
   
-
 Install and compile from crates.io  
-`cargo install vapore`
+`cargo install vapore-gui`
 
 ### Download vanguard transactions
 
@@ -56,34 +55,16 @@ Download transaction file from within the vanguard account
 9. Move the downloaded CSV file to where you want to run this program
 
 ### Run
-`vapore --brokerage-acct <#> --roth-acct <#> --trad-acct <#> --retirement-year 2055 <vanguard_csv>`  
+`vapore-gui`  
+ 
+- Click `Open Vanguard File` and import the ofxdownload.csv file
+- Type in name and click `create` to create a new profile.  This will be cached for future use.
+- Enter birth year and retirement year
+- Add account numbers and check the retirement box next to brokerage if the brokerage account is to be balance with the retirement accounts.
+- If not using the brokerage account with retirement balancing, there is a slider for stock percentage.
+- If old enough to need distributions from the traditional IRA, then `Load distribution table`.
+- Click `Update` to calculate holdings and target purchases.  The calculated values can be seen in the dropdown menus
   
-If money is being added to any of the accounts, add one of the following flags along with the amount:
-- --add-cash-brokerage <#>
-- --add-cash-traditional <#>
-- --add-cash-roth <#>  
-  
-Where the latter two are for IRA additions.  
 
-### Output
-The output will look similar to below:  
-```
-Brokerage:
-Symbol   Purchase/Sell  Current         Target
---------------------------------------------------
-VV       5.55           $1381.38        $2572.64
-VO       4.76           $1379.50        $2572.64
-VB       5.44           $1357.48        $2572.64
-VTC      -47.38         $6875.00        $2572.64
-BND      30.16          $0.00           $2572.64
-VXUS     -10.98         $3256.82        $2572.64
-VWO      -7.44          $1650.02        $1286.32
-BNDX     -14.29         $3389.67        $2572.64
---------------------------------------------------
-Cash                    $49.08          $0.00
-Total                   $19294.79
-==================================================
 
-```
-  
-Where the second column contains the number of ETF stocks to purchase (positive) or sell (negative).
+![App picture](./vapore.png)

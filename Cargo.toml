@@ -11,7 +11,7 @@ categories = ["command-line-utilities"]
 repository = "https://github.com/Roco-scientist/VAnguard-POrtfolio-REbalance-GUI"
 
 [[bin]]
-name = "vapore"
+name = "vapore-gui"
 test = false
 bench = false
 path = "src/main.rs"
