@@ -31,6 +31,7 @@ There is also an equal distribution among cap sizes in order to not be over inve
 - Vanguard account with money in it
 
 ### Compile
+#### Local App
 Install and compile from source  
 ```
 git clone https://github.com/Roco-scientist/VAnguard-POrtfolio-REbalance-GUI
@@ -40,6 +41,17 @@ cargo install --path .
   
 Install and compile from crates.io  
 `cargo install vapore-gui`
+#### WASM website app
+Required: trunk  
+To install: `cargo install --locked trunk`  
+  
+```
+git clone https://github.com/Roco-scientist/VAnguard-POrtfolio-REbalance-GUI
+cd VAnguard-POrtfolio-REbalance-GUI
+```
+Either:
+- `trunk build --release` to build in `./dist/`
+- `trunk serve` to host locally
 
 ### Download vanguard transactions
 
@@ -55,14 +67,25 @@ Download transaction file from within the vanguard account
 9. Move the downloaded CSV file to where you want to run this program
 
 ### Run
+#### Local App
 `vapore-gui`  
+
+#### Web App
+Either place `./dist/` onto a webserver or run `python3 -m http.server` within the folder or run `trunk serve`.  
+  
+Web app is missing due to yahoo not working with WASM:
+- yahoo stock price updates and needs stock price within the downloaded vanguard file.  Therefor will only fully work when all used stocks are already within the portfolio.
+- Distributions as previous year portfolio value cannot be calculated without yahoo stock prices.
+- Alpaca updates also not included
+
+#### On either version, follow instructions below
  
 - Click `Open Vanguard File` and import the ofxdownload.csv file
 - Type in name and click `create` to create a new profile.  This will be cached for future use.
 - Enter birth year and retirement year
 - Add account numbers and check the retirement box next to brokerage if the brokerage account is to be balance with the retirement accounts.
 - If not using the brokerage account with retirement balancing, there is a slider for stock percentage.
-- If old enough to need distributions from the traditional IRA, then `Load distribution table`.
+- Only with local app: If old enough to need distributions from the traditional IRA, then `Load distribution table`.
 - Click `Update` to calculate holdings and target purchases.  The calculated values can be seen in the dropdown menus
   
 
