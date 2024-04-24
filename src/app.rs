@@ -5,6 +5,7 @@ use crate::{
 #[cfg(not(target_arch = "wasm32"))]
 use apca::{api::v2::account, ApiInfo, Client};
 use chrono::{Datelike, Local};
+#[cfg(not(target_arch = "wasm32"))]
 use futures::executor::block_on;
 use std::{
     collections::HashMap,

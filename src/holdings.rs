@@ -1,6 +1,8 @@
 use crate::asset::SubAllocations;
-use anyhow::{Context, Result};
-use chrono::{Duration, NaiveDate};
+use anyhow::Result;
+#[cfg(not(target_arch = "wasm32"))]
+use chrono::Duration;
+use chrono::NaiveDate;
 use std::{
     collections::HashMap,
     fmt,
@@ -339,8 +341,7 @@ pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
         let provider = yahoo::YahooConnector::new();
         let response_err = provider
             .get_latest_quotes(stock_str, "1m")
-            .await
-            .with_context(|| format!("Latest quote error for: {}", stock_str));
+            .await;
         // If the market is closed, an error occurs.  If so, get quote history then the last quote
         if let Ok(response) = response_err {
             Ok(response.last_quote()?.close as f32)
@@ -349,10 +350,7 @@ pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
             let week_ago = today - time::Duration::days(7);
             let response = provider
                 .get_quote_history(stock_str, week_ago, today)
-                .await
-                .with_context(|| {
-                    format!("Both attempts at quote retrieval failed for: {}", stock_str)
-                })?;
+                .await?;
             Ok(response.last_quote()?.close as f32)
         }
     }
@@ -383,8 +381,7 @@ pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result
         let stop = OffsetDateTime::parse(&format!("{}-12-31 23:59:59 -05", year), format)?;
         let response = provider
             .get_quote_history(stock_str, start, stop)
-            .await
-            .with_context(|| format!("Quote history error for: {}", stock_str))?;
+            .await?;
         Ok(response.quotes()?.last().unwrap().close as f32)
     }
 }
