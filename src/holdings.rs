@@ -10,7 +10,9 @@ use std::{
     path::PathBuf,
     vec::Vec,
 };
+#[cfg(not(target_arch = "wasm32"))]
 use time::{macros::format_description, OffsetDateTime};
+#[cfg(not(target_arch = "wasm32"))]
 use yahoo_finance_api as yahoo;
 
 // STOCK_DESCRIPTION holds the descriptions for the stock symbols which is used to print and
@@ -320,6 +322,7 @@ impl Default for StockInfo {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
     let stock_str = match stock_symbol {
         StockSymbol::VO => "VO",
@@ -358,6 +361,7 @@ pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result<f32> {
     let stock_str = match stock_symbol {
         StockSymbol::VO => "VO",
@@ -393,6 +397,7 @@ pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result
 pub enum AddType {
     StockPrice,
     HoldingValue,
+    HoldingShares,
 }
 
 /// ShareValues holds the values for the supported ETF stocks.  The value can represent price,
@@ -490,6 +495,7 @@ impl ShareValues {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn add_missing_quotes(&mut self) -> Result<()> {
         for stock_symbol in [
             StockSymbol::VV,
@@ -510,6 +516,7 @@ impl ShareValues {
         Ok(())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn add_missing_eoy_quotes(&mut self, year: u32) -> Result<()> {
         for stock_symbol in [
             StockSymbol::VV,
@@ -632,6 +639,7 @@ impl ShareValues {
         let value = match add_type {
             AddType::StockPrice => stock_info.share_price,
             AddType::HoldingValue => stock_info.total_value,
+            AddType::HoldingShares => stock_info.shares,
         };
         match stock_info.symbol {
             StockSymbol::VXUS => self.vxus = value,
@@ -646,8 +654,9 @@ impl ShareValues {
             StockSymbol::VMFXX => self.vmfxx = value,
             StockSymbol::Empty => panic!("Stock symbol not set before adding value"),
             StockSymbol::Other(_) => match add_type {
-                AddType::StockPrice => self.other = 1.0,
                 AddType::HoldingValue => self.other += value,
+                AddType::StockPrice => self.other = 1.0,
+                AddType::HoldingShares => self.other = 1.0,
             },
         }
     }
@@ -952,7 +961,8 @@ pub enum HoldingType {
 /// struct is creating during the parsing of the downloaded Vanguard file
 #[derive(Clone, Debug)]
 pub struct VanguardHoldings {
-    pub accounts: HashMap<u32, ShareValues>,
+    pub accounts_values: HashMap<u32, ShareValues>,
+    pub accounts_shares: HashMap<u32, ShareValues>,
     quotes: ShareValues,
     transactions: Vec<Transaction>, // holds all transactions, which needs to be filtered by trad
     // acct num later
@@ -974,7 +984,8 @@ impl VanguardHoldings {
     /// ```
     pub fn new(quotes: ShareValues) -> Self {
         VanguardHoldings {
-            accounts: HashMap::new(),
+            accounts_values: HashMap::new(),
+            accounts_shares: HashMap::new(),
             quotes,
             transactions: Vec::new(),
             distributions: HashMap::new(),
@@ -995,9 +1006,10 @@ impl VanguardHoldings {
     }
     // Calculated the previous end of year holdings value based on the holdings times the quotes
     // from December 31st of the previous year.
+    #[cfg(not(target_arch = "wasm32"))]
     pub async fn eoy_value(&mut self, year: u32, traditional_acct_num: u32) -> Result<Option<f32>> {
         let trad_holdings = self
-            .accounts
+            .accounts_values
             .get(&traditional_acct_num)
             .unwrap_or(&ShareValues::new())
             .clone();
@@ -1014,6 +1026,7 @@ impl VanguardHoldings {
     }
     // Takes the current holdings and subtracts all transaction since December 31st to come to the
     // holdings at that date.
+    #[cfg(not(target_arch = "wasm32"))]
     fn eoy_traditional_holdings(
         &mut self,
         year: u32,
@@ -1339,11 +1352,11 @@ impl TransactionType {
 /// parse_csv_download takes in the file path of the downloaded file from Vanguard and parses it
 /// into VanguardHoldings.  The VanguardHoldings is a struct which holds the values of what is
 /// contained within the vangaurd account along with quotes for each of the ETFs
-pub async fn parse_csv_download(csv_path: PathBuf) -> Result<VanguardHoldings> {
+pub async fn parse_csv_download(csv_string: String) -> Result<VanguardHoldings> {
     let mut header = Vec::new();
     let mut transaction_header = Vec::new();
-    let csv_file = File::open(csv_path)?;
-    let mut accounts: HashMap<u32, ShareValues> = HashMap::new();
+    let mut accounts_values: HashMap<u32, ShareValues> = HashMap::new();
+    let mut accounts_shares: HashMap<u32, ShareValues> = HashMap::new();
     let mut quotes = ShareValues::new_quote();
 
     let mut holdings_row = true;
@@ -1352,8 +1365,8 @@ pub async fn parse_csv_download(csv_path: PathBuf) -> Result<VanguardHoldings> {
     // iterate through all of the rows of the vanguard downlaoaded file and add the information to
     // StockInfo structs, which then are aggregated into the accounts hashmap where the account
     // number is the key
-    for row_result in BufReader::new(csv_file).lines() {
-        let row = row_result?;
+    for row in csv_string.split('\n') {
+        println!("{}", row);
         if row.contains(',') {
             if row.contains("Trade Date") {
                 holdings_row = false;
@@ -1386,11 +1399,16 @@ pub async fn parse_csv_download(csv_path: PathBuf) -> Result<VanguardHoldings> {
                         }
                         if stock_info.finished() {
                             
-                            let account_value = accounts
+                            let account_value = accounts_values
                                 .entry(stock_info.account_number)
                                 .or_insert_with(ShareValues::new);
                             account_value
                                 .add_stockinfo_value(stock_info.clone(), AddType::HoldingValue);
+                            let account_shares = accounts_shares
+                                .entry(stock_info.account_number)
+                                .or_insert_with(ShareValues::new);
+                            account_shares
+                                .add_stockinfo_value(stock_info.clone(), AddType::HoldingShares);
                             quotes.add_stockinfo_value(stock_info.clone(), AddType::StockPrice);
                         } 
                     }
@@ -1444,10 +1462,12 @@ pub async fn parse_csv_download(csv_path: PathBuf) -> Result<VanguardHoldings> {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     quotes.add_missing_quotes().await?;
 
     Ok(VanguardHoldings {
-        accounts,
+        accounts_values,
+        accounts_shares,
         quotes,
         transactions,
         distributions: HashMap::new(),

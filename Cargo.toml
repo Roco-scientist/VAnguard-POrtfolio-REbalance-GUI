@@ -33,7 +33,6 @@ chrono = "0.4.34"
 clap = "2.33"
 futures = "0.3"
 lazy_static = "1.4"
-yahoo_finance_api = "2.1"
 time = {version = "0.3", features = ["parsing"]}
 
 # You only need serde if you want app persistence:
@@ -44,6 +43,7 @@ serde = { version = "1", features = ["derive"] }
 env_logger = "0.10"
 apca = "0.28"
 tokio = {version = "1", features = ["full"]}
+yahoo_finance_api = "2.1"
 
 # web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
