@@ -2,11 +2,16 @@ use crate::{
     calc,
     holdings::{parse_csv_download, ShareValues, StockSymbol, VanguardHoldings, VanguardRebalance},
 };
-use chrono::{Datelike, Local};
-use futures::executor::block_on;
-use std::{sync::{Arc, Mutex}, future::Future, collections::HashMap, string::String};
 #[cfg(not(target_arch = "wasm32"))]
 use apca::{api::v2::account, ApiInfo, Client};
+use chrono::{Datelike, Local};
+use futures::executor::block_on;
+use std::{
+    collections::HashMap,
+    future::Future,
+    string::String,
+    sync::{Arc, Mutex},
+};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -151,13 +156,16 @@ impl eframe::App for VaporeApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
             ui.heading("VAnguard POrtfolio REbalance");
-            
+
             if ui.button("Open Vanguard File").clicked() {
                 let file_future = rfd::AsyncFileDialog::new().pick_file();
                 let vanguard_holdings = Arc::clone(&self.vanguard_holdings);
                 execute(async move {
                     if let Some(file) = file_future.await {
-                        *vanguard_holdings.lock().unwrap() = parse_csv_download(String::from_utf8(file.read().await).unwrap()).await.unwrap();
+                        *vanguard_holdings.lock().unwrap() =
+                            parse_csv_download(String::from_utf8(file.read().await).unwrap())
+                                .await
+                                .unwrap();
                         // parse_csv_download(String::from_utf8(file.read().await).unwrap()).await.unwrap();
                     }
                 });
@@ -223,7 +231,13 @@ impl eframe::App for VaporeApp {
                         egui::ComboBox::from_id_source("Brokerage")
                             .selected_text(profile_account_num.to_string())
                             .show_ui(ui, |ui| {
-                                for acct_num in self.vanguard_holdings.lock().unwrap().accounts_values.keys() {
+                                for acct_num in self
+                                    .vanguard_holdings
+                                    .lock()
+                                    .unwrap()
+                                    .accounts_values
+                                    .keys()
+                                {
                                     ui.selectable_value(
                                         &mut *profile_account_num,
                                         *acct_num,
@@ -241,7 +255,13 @@ impl eframe::App for VaporeApp {
                         egui::ComboBox::from_id_source("Traditional")
                             .selected_text(profile_account_num.to_string())
                             .show_ui(ui, |ui| {
-                                for acct_num in self.vanguard_holdings.lock().unwrap().accounts_values.keys() {
+                                for acct_num in self
+                                    .vanguard_holdings
+                                    .lock()
+                                    .unwrap()
+                                    .accounts_values
+                                    .keys()
+                                {
                                     ui.selectable_value(
                                         &mut *profile_account_num,
                                         *acct_num,
@@ -258,7 +278,13 @@ impl eframe::App for VaporeApp {
                         egui::ComboBox::from_id_source("IRA")
                             .selected_text(profile_account_num.to_string())
                             .show_ui(ui, |ui| {
-                                for acct_num in self.vanguard_holdings.lock().unwrap().accounts_values.keys() {
+                                for acct_num in self
+                                    .vanguard_holdings
+                                    .lock()
+                                    .unwrap()
+                                    .accounts_values
+                                    .keys()
+                                {
                                     ui.selectable_value(
                                         &mut *profile_account_num,
                                         *acct_num,
@@ -273,7 +299,9 @@ impl eframe::App for VaporeApp {
             if let Some(brokerage_account_num) = self.brokerage_account_num.get(&self.profile_name)
             {
                 self.brokerage_holdings = self
-                    .vanguard_holdings.lock().unwrap()
+                    .vanguard_holdings
+                    .lock()
+                    .unwrap()
                     .accounts_values
                     .get(brokerage_account_num)
                     .unwrap_or(&ShareValues::default())
@@ -281,7 +309,9 @@ impl eframe::App for VaporeApp {
             };
             if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
                 self.traditional_holdings = self
-                    .vanguard_holdings.lock().unwrap()
+                    .vanguard_holdings
+                    .lock()
+                    .unwrap()
                     .accounts_values
                     .get(trad_account_num)
                     .unwrap_or(&ShareValues::default())
@@ -289,7 +319,9 @@ impl eframe::App for VaporeApp {
             };
             if let Some(roth_account_num) = self.roth_account_num.get(&self.profile_name) {
                 self.roth_holdings = self
-                    .vanguard_holdings.lock().unwrap()
+                    .vanguard_holdings
+                    .lock()
+                    .unwrap()
                     .accounts_values
                     .get(roth_account_num)
                     .unwrap_or(&ShareValues::default())
@@ -313,18 +345,20 @@ impl eframe::App for VaporeApp {
                 #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Add Alpaca").clicked() {
                     let key_id = std::env::var("APCA_API_KEY_ID").unwrap_or_else(|_| String::new());
-                    let key = std::env::var("APCA_API_SECRET_KEY").unwrap_or_else(|_| String::new());
+                    let key =
+                        std::env::var("APCA_API_SECRET_KEY").unwrap_or_else(|_| String::new());
                     if !key_id.is_empty() && !key.is_empty() {
-                        let api_info = ApiInfo::from_parts("https://api.alpaca.markets/", &key_id, &key)
-                            .unwrap();
+                        let api_info =
+                            ApiInfo::from_parts("https://api.alpaca.markets/", &key_id, &key)
+                                .unwrap();
                         let client = Client::new(api_info);
-                        let alpaca_equity = block_on(client
-                            .issue::<account::Get>(&())).unwrap()
+                        let alpaca_equity = block_on(client.issue::<account::Get>(&()))
+                            .unwrap()
                             .equity
                             .to_f64()
                             .unwrap() as f32;
                         self.brokerage_us_stock_add += alpaca_equity;
-                    }else{
+                    } else {
                         ui.label("APCA_API_KEY_ID or APCA_API_SECRET_KEY missing");
                     };
                 };
@@ -371,7 +405,9 @@ impl eframe::App for VaporeApp {
                         let age = self.distribution_year - birth_year;
                         if age > self.distribution_table.keys().min().unwrap_or(&70).clone() {
                             if let Some(traditional_value) = block_on(
-                                self.vanguard_holdings.lock().unwrap()
+                                self.vanguard_holdings
+                                    .lock()
+                                    .unwrap()
                                     .eoy_value(self.distribution_year, trad_account_num.clone()),
                             )
                             .unwrap()
@@ -381,8 +417,11 @@ impl eframe::App for VaporeApp {
                                 if minimum_distribution_div != 0.0 {
                                     let minimum_distribution =
                                         traditional_value / minimum_distribution_div;
-                                    let so_far =
-                                        self.vanguard_holdings.lock().unwrap().distributions(trad_account_num);
+                                    let so_far = self
+                                        .vanguard_holdings
+                                        .lock()
+                                        .unwrap()
+                                        .distributions(trad_account_num);
                                     let left = (minimum_distribution - so_far).max(0.0);
                                     ui.label(format!(
                                         "Minimum distribution: {:.2}",

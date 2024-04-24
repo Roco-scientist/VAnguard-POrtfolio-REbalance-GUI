@@ -803,7 +803,8 @@ impl ShareValues {
     pub fn percent_stock_bond_infl(&self) -> (f32, f32, f32) {
         let total_bond = self.bndx + self.bnd + self.vtc + self.outside_bond;
         let total_stock = self.vwo + self.vo + self.vb + self.vv + self.vxus + self.outside_stock;
-        let total = self.total_value() - self.vmfxx - self.other + self.outside_bond + self.outside_stock;
+        let total =
+            self.total_value() - self.vmfxx - self.other + self.outside_bond + self.outside_stock;
         (
             total_stock / total * 100.0,
             total_bond / total * 100.0,
@@ -1398,7 +1399,6 @@ pub async fn parse_csv_download(csv_string: String) -> Result<VanguardHoldings> 
                             }
                         }
                         if stock_info.finished() {
-                            
                             let account_value = accounts_values
                                 .entry(stock_info.account_number)
                                 .or_insert_with(ShareValues::new);
@@ -1410,7 +1410,7 @@ pub async fn parse_csv_download(csv_string: String) -> Result<VanguardHoldings> 
                             account_shares
                                 .add_stockinfo_value(stock_info.clone(), AddType::HoldingShares);
                             quotes.add_stockinfo_value(stock_info.clone(), AddType::StockPrice);
-                        } 
+                        }
                     }
                 } else if transaction_header.is_empty() {
                     transaction_header = row_split
