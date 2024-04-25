@@ -14,17 +14,19 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+type ProfileName = String;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct VaporeApp {
-    profile_name: String, // Holds the profile name that is used to retrieve birth year etc
-    birth_year: HashMap<String, u32>, // Profile name: year
-    retirement_year: HashMap<String, i32>, // Profile name: year
-    brokerage_stock: HashMap<String, u32>, // Profile name: brokerage stock percent
-    brokerage_account_num: HashMap<String, u32>, // Profile name: brokerage account number
-    roth_account_num: HashMap<String, u32>, // Profile name: Roth account number
-    trad_account_num: HashMap<String, u32>, // Profile name: Traditional IRA account number
+    profile_name: ProfileName, // Holds the profile name that is used to retrieve birth year etc
+    birth_year: HashMap<ProfileName, u32>, // Profile name: year
+    retirement_year: HashMap<ProfileName, i32>, // Profile name: year
+    brokerage_stock: HashMap<ProfileName, u32>, // Profile name: brokerage stock percent
+    brokerage_account_num: HashMap<ProfileName, u32>, // Profile name: brokerage account number
+    roth_account_num: HashMap<ProfileName, u32>, // Profile name: Roth account number
+    trad_account_num: HashMap<ProfileName, u32>, // Profile name: Traditional IRA account number
     distribution_table: HashMap<u32, f32>, // Age: divider from IRS' distribution table
     #[cfg(not(target_arch = "wasm32"))]
     #[serde(skip)]
@@ -346,40 +348,37 @@ impl eframe::App for VaporeApp {
                 if let Some(brokerage_account_num) =
                     self.brokerage_account_num.get(&self.profile_name)
                 {
-                    self.brokerage_holdings = self
+                    self.brokerage_holdings = *self
                         .vanguard_holdings
                         .lock()
                         .unwrap()
                         .accounts_values
                         .get(brokerage_account_num)
-                        .unwrap_or(&ShareValues::default())
-                        .clone();
+                        .unwrap_or(&ShareValues::default());
                 };
 
                 // If there is a profile created, set the IRA hodlings to the account number
                 // selected
                 if let Some(trad_account_num) = self.trad_account_num.get(&self.profile_name) {
-                    self.traditional_holdings = self
+                    self.traditional_holdings = *self
                         .vanguard_holdings
                         .lock()
                         .unwrap()
                         .accounts_values
                         .get(trad_account_num)
-                        .unwrap_or(&ShareValues::default())
-                        .clone();
+                        .unwrap_or(&ShareValues::default());
                 };
 
                 // If there is a profile created, set the Roth IRA hodlings to the account number
                 // selected
                 if let Some(roth_account_num) = self.roth_account_num.get(&self.profile_name) {
-                    self.roth_holdings = self
+                    self.roth_holdings = *self
                         .vanguard_holdings
                         .lock()
                         .unwrap()
                         .accounts_values
                         .get(roth_account_num)
-                        .unwrap_or(&ShareValues::default())
-                        .clone();
+                        .unwrap_or(&ShareValues::default());
                 };
 
                 // If brokerage percentage is not set by retirement ratios and is kept separate, create
@@ -474,16 +473,16 @@ impl eframe::App for VaporeApp {
                             self.trad_account_num.get(&self.profile_name)
                         {
                             let age = self.distribution_year - birth_year;
-                            if age > self.distribution_table.keys().min().unwrap_or(&70).clone() {
+                            if age > *self.distribution_table.keys().min().unwrap_or(&70) {
                                 if let Some(traditional_value) =
                                     block_on(self.vanguard_holdings.lock().unwrap().eoy_value(
                                         self.distribution_year,
-                                        trad_account_num.clone(),
+                                        *trad_account_num,
                                     ))
                                     .unwrap()
                                 {
                                     let minimum_distribution_div =
-                                        self.distribution_table.get(&age).unwrap_or(&0.0).clone();
+                                        *self.distribution_table.get(&age).unwrap_or(&0.0);
                                     if minimum_distribution_div != 0.0 {
                                         let minimum_distribution =
                                             traditional_value / minimum_distribution_div;

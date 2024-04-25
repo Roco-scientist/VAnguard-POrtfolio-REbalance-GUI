@@ -992,20 +992,18 @@ impl VanguardHoldings {
         self.transactions.clone()
     }
     pub fn distributions(&self, account_number: &u32) -> f32 {
-        self.distributions
+        *self.distributions
             .get(account_number)
             .unwrap_or(&0.0)
-            .clone()
     }
     // Calculated the previous end of year holdings value based on the holdings times the quotes
     // from December 31st of the previous year.
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn eoy_value(&mut self, year: u32, traditional_acct_num: u32) -> Result<Option<f32>> {
-        let trad_holdings = self
+        let trad_holdings = *self
             .accounts_values
             .get(&traditional_acct_num)
-            .unwrap_or(&ShareValues::new())
-            .clone();
+            .unwrap_or(&ShareValues::new());
         if let Some(holdings) =
             self.eoy_traditional_holdings(year, traditional_acct_num, trad_holdings)
         {
@@ -1048,22 +1046,18 @@ impl VanguardHoldings {
                 } else if transaction.symbol != StockSymbol::Empty {
                     eoy_holdings
                         .subtract_stock_value(transaction.symbol.clone(), transaction.shares);
-                } else if transaction.transaction_type == TransactionType::DISTRIBUTION {
-                    if transaction.trade_date < following_year {
-                        let distribution = self
-                            .distributions
-                            .entry(transaction.account_number)
-                            .or_insert(0.0);
-                        *distribution -= transaction.net_amount;
-                    }
+                } else if transaction.transaction_type == TransactionType::Distribution && transaction.trade_date < following_year {
+                    let distribution = self
+                        .distributions
+                        .entry(transaction.account_number)
+                        .or_insert(0.0);
+                    *distribution -= transaction.net_amount;
                 }
             } else {
                 enough_transaction = true;
             }
         }
-        if !enough_transaction {
-            None
-        } else if total_transactions == 0 {
+        if !enough_transaction || total_transactions == 0 {
             None
         } else {
             Some(eoy_holdings)
@@ -1310,17 +1304,17 @@ pub struct Transaction {
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
 enum TransactionType {
-    CONVERSIONOUT,
-    DIVIDEND,
-    REINVESTMENT,
-    ADVISORFEE,
-    BUY,
-    CONVERSIONIN,
-    SELL,
-    FUNDSRECEIVED,
-    SWEEPOUT,
-    SWEEPIN,
-    DISTRIBUTION,
+    ConversionOut,
+    Dividend,
+    Reinvestment,
+    AdvisorFee,
+    Buy,
+    ConversionIn,
+    Sell,
+    Fundsreceived,
+    Sweepout,
+    Sweepin,
+    Distribution,
     Other(String),
 }
 
@@ -1337,17 +1331,17 @@ impl TransactionType {
     ///  ```
     pub fn new(transaction_type: &str) -> Self {
         match transaction_type {
-            "Conversion (outgoing)" => TransactionType::CONVERSIONOUT,
-            "Dividend" => TransactionType::DIVIDEND,
-            "Reinvestment" => TransactionType::REINVESTMENT,
-            "Advisor fee" => TransactionType::ADVISORFEE,
-            "Buy" => TransactionType::BUY,
-            "Conversion (incoming)" => TransactionType::CONVERSIONIN,
-            "Sell" => TransactionType::SELL,
-            "Funds Received" => TransactionType::FUNDSRECEIVED,
-            "Sweep out" => TransactionType::SWEEPOUT,
-            "Sweep in" => TransactionType::SWEEPIN,
-            "Distribution" => TransactionType::DISTRIBUTION,
+            "Conversion (outgoing)" => TransactionType::ConversionOut,
+            "Dividend" => TransactionType::Dividend,
+            "Reinvestment" => TransactionType::Reinvestment,
+            "Advisor fee" => TransactionType::AdvisorFee,
+            "Buy" => TransactionType::Buy,
+            "Conversion (incoming)" => TransactionType::ConversionIn,
+            "Sell" => TransactionType::Sell,
+            "Funds Received" => TransactionType::Fundsreceived,
+            "Sweep out" => TransactionType::Sweepout,
+            "Sweep in" => TransactionType::Sweepin,
+            "Distribution" => TransactionType::Distribution,
             _ => TransactionType::Other(transaction_type.to_string()),
         }
     }
@@ -1446,7 +1440,7 @@ pub async fn parse_csv_download(csv_string: String) -> Result<VanguardHoldings> 
                                     if let Some(net_amount) = net_amount_option {
                                         if let Some(transaction_type) = transaction_type_option {
                                             transactions.push(Transaction {
-                                                account_number: account_number,
+                                                account_number,
                                                 symbol,
                                                 shares,
                                                 trade_date,
