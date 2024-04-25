@@ -341,9 +341,7 @@ pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
         Ok(1.0)
     } else {
         let provider = yahoo::YahooConnector::new();
-        let response_err = provider
-            .get_latest_quotes(stock_str, "1m")
-            .await;
+        let response_err = provider.get_latest_quotes(stock_str, "1m").await;
         // If the market is closed, an error occurs.  If so, get quote history then the last quote
         if let Ok(response) = response_err {
             Ok(response.last_quote()?.close as f32)
@@ -381,9 +379,7 @@ pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result
         );
         let start = OffsetDateTime::parse(&format!("{}-12-25 00:00:01 -05", year), format)?;
         let stop = OffsetDateTime::parse(&format!("{}-12-31 23:59:59 -05", year), format)?;
-        let response = provider
-            .get_quote_history(stock_str, start, stop)
-            .await?;
+        let response = provider.get_quote_history(stock_str, start, stop).await?;
         Ok(response.quotes()?.last().unwrap().close as f32)
     }
 }
@@ -1074,13 +1070,14 @@ impl VanguardHoldings {
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn update_with_yahoo_quotes(&mut self) -> Result<()>{
+    pub fn update_with_yahoo_quotes(&mut self) -> Result<()> {
         self.quotes = ShareValues::new_quote();
         block_on(self.quotes.add_missing_quotes())?;
         self.accounts_values = HashMap::new();
         for (acct_num, shares) in self.accounts_shares.iter() {
-            self.accounts_values.insert(*acct_num, *shares * self.quotes);
-        };
+            self.accounts_values
+                .insert(*acct_num, *shares * self.quotes);
+        }
         Ok(())
     }
 }
