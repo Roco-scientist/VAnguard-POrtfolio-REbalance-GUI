@@ -1373,7 +1373,6 @@ pub async fn parse_csv_download(csv_string: String) -> Result<VanguardHoldings> 
     // StockInfo structs, which then are aggregated into the accounts hashmap where the account
     // number is the key
     for row in csv_string.split('\n') {
-        println!("{}", row);
         if row.contains(',') {
             if row.contains("Trade Date") {
                 holdings_row = false;
