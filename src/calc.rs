@@ -236,21 +236,19 @@ fn retirement_calc(
         include_traditional = true;
         traditional_holdings_final = traditional_holdings;
     }
-    if use_brokerage_retirement {
-        if brokerage_holdings.total_value() != 0.0 {
-            brokerage_holdings.add_stock_value(
-                StockSymbol::VMFXX,
-                brokerage_holdings.stock_value(StockSymbol::VMFXX) + brokerage_cash_add,
-            );
-            holdings_value += brokerage_holdings.total_value();
-            us_stock_add += brokerage_us_stock_add;
-            us_bond_add += brokerage_us_bond_add;
-            int_stock_add += brokerage_int_stock_add;
-            int_bond_add += brokerage_int_bond_add;
-            include_brokerage = true;
-            brokerage_total = brokerage_holdings.total_value();
-            brokerage_holdings_final = brokerage_holdings;
-        }
+    if use_brokerage_retirement && brokerage_holdings.total_value() != 0.0 {
+        brokerage_holdings.add_stock_value(
+            StockSymbol::VMFXX,
+            brokerage_holdings.stock_value(StockSymbol::VMFXX) + brokerage_cash_add,
+        );
+        holdings_value += brokerage_holdings.total_value();
+        us_stock_add += brokerage_us_stock_add;
+        us_bond_add += brokerage_us_bond_add;
+        int_stock_add += brokerage_int_stock_add;
+        int_bond_add += brokerage_int_bond_add;
+        include_brokerage = true;
+        brokerage_total = brokerage_holdings.total_value();
+        brokerage_holdings_final = brokerage_holdings;
     }
 
     let mut target_overall_retirement = ShareValues::new();
