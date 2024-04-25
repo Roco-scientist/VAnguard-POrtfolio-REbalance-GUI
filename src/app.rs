@@ -28,6 +28,9 @@ pub struct VaporeApp {
     roth_account_num: HashMap<String, u32>, // Profile name: Roth account number
     trad_account_num: HashMap<String, u32>, // Profile name: Traditional IRA account number
     distribution_table: HashMap<u32, f32>, // Age: divider from IRS' distribution table
+    #[cfg(not(target_arch = "wasm32"))]
+    #[serde(skip)]
+    yahoo_updated: bool, // Year for which distributions are calculated
     #[serde(skip)]
     distribution_year: u32, // Year for which distributions are calculated
     #[serde(skip)]
@@ -84,6 +87,8 @@ impl Default for VaporeApp {
             roth_account_num: HashMap::new(),
             trad_account_num: HashMap::new(),
             distribution_table: HashMap::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            yahoo_updated: false,
             distribution_year: Local::now().year() as u32,
             brokerage_cash_add: 0,
             brokerage_us_stock_add: 0.0,
@@ -172,8 +177,11 @@ impl eframe::App for VaporeApp {
             ui.horizontal(|ui| {
                 if ui.button("Update with Yahoo stock quotes").clicked() {
                     self.vanguard_holdings.lock().unwrap().update_with_yahoo_quotes().unwrap();
-                    ui.label("Updated");
+                    self.yahoo_updated = true;
                 };
+                if self.yahoo_updated{
+                    ui.label("Updated");
+                }
             });
 
             // Profile creator with all values that are specific to each profile, such as account
