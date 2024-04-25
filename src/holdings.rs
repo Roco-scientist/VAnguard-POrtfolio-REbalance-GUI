@@ -3,6 +3,8 @@ use anyhow::Result;
 #[cfg(not(target_arch = "wasm32"))]
 use chrono::Duration;
 use chrono::NaiveDate;
+#[cfg(not(target_arch = "wasm32"))]
+use futures::executor::block_on;
 use std::{
     collections::HashMap,
     fmt,
@@ -1070,6 +1072,16 @@ impl VanguardHoldings {
         } else {
             Some(eoy_holdings)
         }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn update_with_yahoo_quotes(&mut self) -> Result<()>{
+        self.quotes = ShareValues::new_quote();
+        block_on(self.quotes.add_missing_quotes())?;
+        self.accounts_values = HashMap::new();
+        for (acct_num, shares) in self.accounts_shares.iter() {
+            self.accounts_values.insert(*acct_num, *shares * self.quotes);
+        };
+        Ok(())
     }
 }
 

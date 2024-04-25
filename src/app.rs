@@ -171,6 +171,13 @@ impl eframe::App for VaporeApp {
                     }
                 });
             };
+            #[cfg(not(target_arch = "wasm32"))]
+            ui.horizontal(|ui| {
+                if ui.button("Update with Yahoo stock quotes").clicked() {
+                    self.vanguard_holdings.lock().unwrap().update_with_yahoo_quotes().unwrap();
+                    ui.label("Updated");
+                };
+            });
 
             egui::CollapsingHeader::new("Profile").show(ui, |ui| {
                 egui::ComboBox::from_id_source("Brokerage")
