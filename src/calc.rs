@@ -346,7 +346,7 @@ fn retirement_calc(
     ))
 }
 
-pub fn get_distribution_table(csv_path: PathBuf) -> Result<HashMap<u32, f32>> {
+pub fn get_distribution_table(csv_path: PathBuf) -> Result<HashMap<i32, f32>> {
     // Distribution table retrieved from here appendix B: https://www.irs.gov/publications/p590b#en_US_2022_publink100090310
     // May need to periodically be updated
     let csv_file = File::open(csv_path).context("Minimum distribution file from IRS not found")?;
@@ -365,7 +365,7 @@ pub fn get_distribution_table(csv_path: PathBuf) -> Result<HashMap<u32, f32>> {
                 } else {
                     ensure!(header.iter().take(2).collect::<Vec<&String>>() == ["Age", "Distribution Period"], "Header of distribution table ({:?}) does not match ['Age','Distribution Period']", header);
                     distribution_table
-                        .insert(row_split[0].parse::<u32>()?, row_split[1].parse::<f32>()?);
+                        .insert(row_split[0].parse::<i32>()?, row_split[1].parse::<f32>()?);
                 }
             }
         }

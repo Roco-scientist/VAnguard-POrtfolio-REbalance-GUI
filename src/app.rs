@@ -21,18 +21,18 @@ type ProfileName = String;
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct VaporeApp {
     profile_name: ProfileName, // Holds the profile name that is used to retrieve birth year etc
-    birth_year: HashMap<ProfileName, u32>, // Profile name: year
+    birth_year: HashMap<ProfileName, i32>, // Profile name: year
     retirement_year: HashMap<ProfileName, i32>, // Profile name: year
     brokerage_stock: HashMap<ProfileName, u32>, // Profile name: brokerage stock percent
     brokerage_account_num: HashMap<ProfileName, u32>, // Profile name: brokerage account number
     roth_account_num: HashMap<ProfileName, u32>, // Profile name: Roth account number
     trad_account_num: HashMap<ProfileName, u32>, // Profile name: Traditional IRA account number
-    distribution_table: HashMap<u32, f32>, // Age: divider from IRS' distribution table
+    distribution_table: HashMap<i32, f32>, // Age: divider from IRS' distribution table
     #[cfg(not(target_arch = "wasm32"))]
     #[serde(skip)]
     yahoo_updated: bool, // Year for which distributions are calculated
     #[serde(skip)]
-    distribution_year: u32, // Year for which distributions are calculated
+    distribution_year: i32, // Year for which distributions are calculated
     #[serde(skip)]
     brokerage_cash_add: i32, // Amount of brokerage cahs added
     #[serde(skip)]
@@ -89,7 +89,7 @@ impl Default for VaporeApp {
             distribution_table: HashMap::new(),
             #[cfg(not(target_arch = "wasm32"))]
             yahoo_updated: false,
-            distribution_year: Local::now().year() as u32,
+            distribution_year: Local::now().year(),
             brokerage_cash_add: 0,
             brokerage_us_stock_add: 0.0,
             brokerage_int_stock_add: 0.0,
@@ -248,16 +248,33 @@ impl eframe::App for VaporeApp {
 
                     // Birth year add
                     if let Some(birth_year) = self.birth_year.get_mut(&self.profile_name) {
-                        ui.add(egui::Slider::new(&mut *birth_year, 1940..=2100).text("Birth year"));
+                        egui::ComboBox::from_id_source("Birth")
+                            .selected_text(birth_year.to_string())
+                            .show_ui(ui, |ui| {
+                                for year in (Local::now().year() - 100)..(Local::now().year()) {
+                                    ui.selectable_value(
+                                        &mut *birth_year,
+                                        year,
+                                        year.to_string(),
+                                    );
+                                }
+                            });
                     }
 
                     // Retirement year add
                     if let Some(retirement_year) = self.retirement_year.get_mut(&self.profile_name)
                     {
-                        ui.add(
-                            egui::Slider::new(&mut *retirement_year, 2020..=2100)
-                                .text("Retirement year"),
-                        );
+                        egui::ComboBox::from_id_source("Retirement")
+                            .selected_text(retirement_year.to_string())
+                            .show_ui(ui, |ui| {
+                                for year in (Local::now().year() - 40)..(Local::now().year() + 50) {
+                                    ui.selectable_value(
+                                        &mut *retirement_year,
+                                        year,
+                                        year.to_string(),
+                                    );
+                                }
+                            });
                     };
 
                     // If a profile has been created, allow selection of brokerage account numbers derived from
@@ -453,7 +470,7 @@ impl eframe::App for VaporeApp {
                     };
 
                     // Selection for current or previous year to calculated needed distributions
-                    let current_year = Local::now().year() as u32;
+                    let current_year = Local::now().year();
                     let last_year = current_year - 1;
                     ui.label("Distribution year:");
                     ui.selectable_value(

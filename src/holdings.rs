@@ -357,7 +357,7 @@ pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result<f32> {
+pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: i32) -> Result<f32> {
     let stock_str = match stock_symbol {
         StockSymbol::VO => "VO",
         StockSymbol::VB => "VB",
@@ -509,7 +509,7 @@ impl ShareValues {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn add_missing_eoy_quotes(&mut self, year: u32) -> Result<()> {
+    pub async fn add_missing_eoy_quotes(&mut self, year: i32) -> Result<()> {
         for stock_symbol in [
             StockSymbol::VV,
             StockSymbol::VO,
@@ -999,7 +999,7 @@ impl VanguardHoldings {
     // Calculated the previous end of year holdings value based on the holdings times the quotes
     // from December 31st of the previous year.
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn eoy_value(&mut self, year: u32, traditional_acct_num: u32) -> Result<Option<f32>> {
+    pub async fn eoy_value(&mut self, year: i32, traditional_acct_num: u32) -> Result<Option<f32>> {
         let trad_holdings = *self
             .accounts_values
             .get(&traditional_acct_num)
@@ -1020,14 +1020,14 @@ impl VanguardHoldings {
     #[cfg(not(target_arch = "wasm32"))]
     fn eoy_traditional_holdings(
         &mut self,
-        year: u32,
+        year: i32,
         traditional_acct_num: u32,
         trad_holdings: ShareValues,
     ) -> Option<ShareValues> {
         let mut enough_transaction = false;
         let mut total_transactions = 0;
         let mut eoy_holdings = trad_holdings;
-        let previous_year = NaiveDate::from_ymd_opt(year as i32 - 1, 12, 31)?;
+        let previous_year = NaiveDate::from_ymd_opt(year - 1, 12, 31)?;
         let following_year = previous_year + Duration::days(365);
         for transaction in &self.transactions {
             // If the transaction is newer thand December 31st of the previous year,
