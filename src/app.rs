@@ -248,33 +248,39 @@ impl eframe::App for VaporeApp {
 
                     // Birth year add
                     if let Some(birth_year) = self.birth_year.get_mut(&self.profile_name) {
-                        egui::ComboBox::from_id_source("Birth")
-                            .selected_text(birth_year.to_string())
-                            .show_ui(ui, |ui| {
-                                for year in (Local::now().year() - 100)..(Local::now().year()) {
-                                    ui.selectable_value(
-                                        &mut *birth_year,
-                                        year,
-                                        year.to_string(),
-                                    );
-                                }
-                            });
+                        ui.horizontal(|ui| {
+                            ui.label("Birth year: ");
+                            egui::ComboBox::from_id_source("Birth")
+                                .selected_text(birth_year.to_string())
+                                .show_ui(ui, |ui| {
+                                    for year in (Local::now().year() - 100)..(Local::now().year()) {
+                                        ui.selectable_value(
+                                            &mut *birth_year,
+                                            year,
+                                            year.to_string(),
+                                        );
+                                    }
+                                });
+                        });
                     }
 
                     // Retirement year add
                     if let Some(retirement_year) = self.retirement_year.get_mut(&self.profile_name)
                     {
-                        egui::ComboBox::from_id_source("Retirement")
-                            .selected_text(retirement_year.to_string())
-                            .show_ui(ui, |ui| {
-                                for year in (Local::now().year() - 40)..(Local::now().year() + 50) {
-                                    ui.selectable_value(
-                                        &mut *retirement_year,
-                                        year,
-                                        year.to_string(),
-                                    );
-                                }
-                            });
+                        ui.horizontal(|ui|{
+                            ui.label("Retirement year: ");
+                            egui::ComboBox::from_id_source("Retirement")
+                                .selected_text(retirement_year.to_string())
+                                .show_ui(ui, |ui| {
+                                    for year in (Local::now().year() - 40)..(Local::now().year() + 50) {
+                                        ui.selectable_value(
+                                            &mut *retirement_year,
+                                            year,
+                                            year.to_string(),
+                                        );
+                                    }
+                                });
+                        });
                     };
 
                     // If a profile has been created, allow selection of brokerage account numbers derived from
