@@ -340,7 +340,7 @@ pub async fn get_yahoo_quote(stock_symbol: StockSymbol) -> Result<f32> {
     if stock_str == "none" {
         Ok(1.0)
     } else {
-        let provider = yahoo::YahooConnector::new();
+        let provider = yahoo::YahooConnector::new()?;
         let response_err = provider.get_latest_quotes(stock_str, "1m").await;
         // If the market is closed, an error occurs.  If so, get quote history then the last quote
         if let Ok(response) = response_err {
@@ -373,7 +373,7 @@ pub async fn get_yahoo_eoy_quote(stock_symbol: StockSymbol, year: u32) -> Result
     if stock_str == "none" {
         Ok(1.0)
     } else {
-        let provider = yahoo::YahooConnector::new();
+        let provider = yahoo::YahooConnector::new()?;
         let format = format_description!(
             "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]"
         );
