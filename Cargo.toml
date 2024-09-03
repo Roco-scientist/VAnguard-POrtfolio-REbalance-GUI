@@ -1,7 +1,7 @@
 [package]
 name = "vapore-gui"
 description = "Vangaurd portfolio rebalancing algorithm"
-version = "0.8.1"
+version = "0.8.2"
 authors = ["Rory Coffey <coffeyrt@gmail.com>"]
 edition = "2021"
 rust-version = "1.72"
@@ -43,7 +43,7 @@ serde = { version = "1", features = ["derive"] }
 env_logger = "0.10"
 apca = "0.28"
 tokio = {version = "1", features = ["full"]}
-yahoo_finance_api = "2.1"
+yahoo_finance_api = "2.2"
 
 # web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
