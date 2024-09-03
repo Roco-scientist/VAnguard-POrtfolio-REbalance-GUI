@@ -991,7 +991,7 @@ impl VanguardHoldings {
     pub fn transactions(&self) -> Vec<Transaction> {
         self.transactions.clone()
     }
-    pub fn distributions(&self, account_number: &u32) -> f32 {
+    pub fn get_distributions(&self, account_number: &u32) -> f32 {
         *self.distributions
             .get(account_number)
             .unwrap_or(&0.0)
@@ -1010,6 +1010,7 @@ impl VanguardHoldings {
             let mut quotes = ShareValues::new_quote();
             quotes.add_missing_eoy_quotes(year - 1).await?;
             let eoy_value = (holdings * quotes).total_value();
+            println!("EOY value: {}", eoy_value);
             Ok(Some(eoy_value))
         } else {
             Ok(None)
