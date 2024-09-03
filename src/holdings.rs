@@ -1001,7 +1001,7 @@ impl VanguardHoldings {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn eoy_value(&mut self, year: u32, traditional_acct_num: u32) -> Result<Option<f32>> {
         let trad_holdings = *self
-            .accounts_values
+            .accounts_shares
             .get(&traditional_acct_num)
             .unwrap_or(&ShareValues::new());
         if let Some(holdings) =
@@ -1010,7 +1010,6 @@ impl VanguardHoldings {
             let mut quotes = ShareValues::new_quote();
             quotes.add_missing_eoy_quotes(year - 1).await?;
             let eoy_value = (holdings * quotes).total_value();
-            println!("EOY value: {}", eoy_value);
             Ok(Some(eoy_value))
         } else {
             Ok(None)
