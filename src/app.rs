@@ -89,7 +89,7 @@ impl Default for VaporeApp {
             roth_account_num: HashMap::new(),
             trad_account_num: HashMap::new(),
             distribution_table: HashMap::new(),
-            distribution_needed: "Load distribution table".to_string(),
+            distribution_needed: "Load distribution table for results. 1 year of VAPORE use needed.".to_string(),
             #[cfg(not(target_arch = "wasm32"))]
             yahoo_updated: false,
             distribution_year: Local::now().year() as u32,
@@ -448,65 +448,67 @@ impl eframe::App for VaporeApp {
                 // WASM/website due to needing to get Yahoo quotes to determine the previous end of
                 // year account value
                 #[cfg(not(target_arch = "wasm32"))]
-                ui.horizontal(|ui| {
-                    if ui.button("Load distribution table").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_file() {
-                            self.distribution_table = calc::get_distribution_table(path).unwrap();
-                            // If the profile's age is old enough, display the distribution needed
-                            if let Some(birth_year) = self.birth_year.get(&self.profile_name) {
-                                if let Some(trad_account_num) =
-                                    self.trad_account_num.get(&self.profile_name)
-                                {
-                                    let age = self.distribution_year - birth_year;
-                                    if age >= *self.distribution_table.keys().min().unwrap_or(&70) {
-                                        let mut v_holdings = self.vanguard_holdings.lock().unwrap();
-                                        if let Some(traditional_value) =
-                                            block_on(v_holdings.eoy_value(
-                                                self.distribution_year,
-                                                *trad_account_num,
-                                            ))
-                                            .unwrap()
-                                        {
-                                            let minimum_distribution_div =
-                                                *self.distribution_table.get(&age).unwrap_or(&0.0);
-                                            if minimum_distribution_div != 0.0 {
-                                                let minimum_distribution =
-                                                    traditional_value / minimum_distribution_div;
-                                                let so_far = v_holdings.get_distributions(trad_account_num);
-                                                let left = (minimum_distribution - so_far).max(0.0);
-                                                self.distribution_needed = format!("Minimum distribution: {:.2}  So far: {:.2}  To go: {:.2}", minimum_distribution, so_far, left);
-                                            }
-                                        } else {
-                                            self.distribution_needed = "More transaction history needed".to_string();
+                egui::CollapsingHeader::new("Required distributions").show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        if ui.button("Load distribution table").clicked() {
+                            if let Some(path) = rfd::FileDialog::new().pick_file() {
+                                self.distribution_table = calc::get_distribution_table(path).unwrap();
+                                // If the profile's age is old enough, display the distribution needed
+                                if let Some(birth_year) = self.birth_year.get(&self.profile_name) {
+                                    if let Some(trad_account_num) =
+                                        self.trad_account_num.get(&self.profile_name)
+                                    {
+                                        let age = self.distribution_year - birth_year;
+                                        if age >= *self.distribution_table.keys().min().unwrap_or(&70) {
+                                            let mut v_holdings = self.vanguard_holdings.lock().unwrap();
+                                            if let Some(traditional_value) =
+                                                block_on(v_holdings.eoy_value(
+                                                    self.distribution_year,
+                                                    *trad_account_num,
+                                                ))
+                                                .unwrap()
+                                            {
+                                                let minimum_distribution_div =
+                                                    *self.distribution_table.get(&age).unwrap_or(&0.0);
+                                                if minimum_distribution_div != 0.0 {
+                                                    let minimum_distribution =
+                                                        traditional_value / minimum_distribution_div;
+                                                    let so_far = v_holdings.get_distributions(trad_account_num);
+                                                    let left = (minimum_distribution - so_far).max(0.0);
+                                                    self.distribution_needed = format!("Minimum distribution: ${:.2}  So far: ${:.2}  To go: ${:.2}", minimum_distribution, so_far, left);
+                                                }
+                                            } else {
+                                                self.distribution_needed = "More transaction history needed".to_string();
+                                            };
+                                        }else{
+                                            self.distribution_needed = "No distribution needed".to_string();
                                         };
-                                    }else{
-                                        self.distribution_needed = "No distribution needed".to_string();
                                     };
                                 };
                             };
                         };
-                    };
 
-                    // Selection for current or previous year to calculated needed distributions
-                    ui.label("Distribution year:");
-                    ui.selectable_value(
-                        &mut self.distribution_year,
-                        Local::now().year() as u32 - 1,
-                        (Local::now().year() as u32 - 1).to_string(),
-                    );
-                    ui.selectable_value(
-                        &mut self.distribution_year,
-                        Local::now().year() as u32,
-                        Local::now().year().to_string(),
-                    );
+                        // Selection for current or previous year to calculated needed distributions
+                        ui.label("Distribution year:");
+                        ui.selectable_value(
+                            &mut self.distribution_year,
+                            Local::now().year() as u32 - 1,
+                            (Local::now().year() as u32 - 1).to_string(),
+                        );
+                        ui.selectable_value(
+                            &mut self.distribution_year,
+                            Local::now().year() as u32,
+                            Local::now().year().to_string(),
+                        );
+
+                    });
                     ui.label(self.distribution_needed.clone());
-
                 });
 
                 // Update the purchase/sales needed to rebalance the portfolio
                 if let Some(brokerage_stock) = self.brokerage_stock.get(&self.profile_name) {
                     if let Some(retirement_year) = self.retirement_year.get(&self.profile_name) {
-                        if ui.button("Update").clicked() {
+                        if ui.button("Update target holdings").clicked() {
                             self.rebalance = calc::to_buy(
                                 *brokerage_stock as f32,
                                 self.brokerage_cash_add as f32,
