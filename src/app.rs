@@ -508,7 +508,7 @@ impl eframe::App for VaporeApp {
                 // Update the purchase/sales needed to rebalance the portfolio
                 if let Some(brokerage_stock) = self.brokerage_stock.get(&self.profile_name) {
                     if let Some(retirement_year) = self.retirement_year.get(&self.profile_name) {
-                        if ui.button("Update").clicked() {
+                        if ui.button("Update target holdings").clicked() {
                             self.rebalance = calc::to_buy(
                                 *brokerage_stock as f32,
                                 self.brokerage_cash_add as f32,
