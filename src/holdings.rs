@@ -1038,7 +1038,7 @@ impl VanguardHoldings {
                 && transaction.account_number == traditional_acct_num
             {
                 total_transactions += 1;
-                // Cash is allocated in VMFXX.  These are not shares in the transaction, so
+                // Cash is allocated in VMFXX.  Shares is always 0 in the transaction, so
                 // net amount needs to be subtracted
                 if transaction.symbol == StockSymbol::VMFXX {
                     eoy_holdings
