@@ -89,7 +89,7 @@ impl Default for VaporeApp {
             roth_account_num: HashMap::new(),
             trad_account_num: HashMap::new(),
             distribution_table: HashMap::new(),
-            distribution_needed: "Load distribution table".to_string(),
+            distribution_needed: "Load distribution table for results. 1 year of VAPORE use needed.".to_string(),
             #[cfg(not(target_arch = "wasm32"))]
             yahoo_updated: false,
             distribution_year: Local::now().year() as u32,
@@ -475,7 +475,7 @@ impl eframe::App for VaporeApp {
                                                         traditional_value / minimum_distribution_div;
                                                     let so_far = v_holdings.get_distributions(trad_account_num);
                                                     let left = (minimum_distribution - so_far).max(0.0);
-                                                    self.distribution_needed = format!("Minimum distribution: {:.2}  So far: {:.2}  To go: {:.2}", minimum_distribution, so_far, left);
+                                                    self.distribution_needed = format!("Minimum distribution: ${:.2}  So far: ${:.2}  To go: ${:.2}", minimum_distribution, so_far, left);
                                                 }
                                             } else {
                                                 self.distribution_needed = "More transaction history needed".to_string();
