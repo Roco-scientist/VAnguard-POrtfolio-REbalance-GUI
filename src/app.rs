@@ -500,9 +500,9 @@ impl eframe::App for VaporeApp {
                             Local::now().year() as u32,
                             Local::now().year().to_string(),
                         );
-                        ui.label(self.distribution_needed.clone());
 
                     });
+                    ui.label(self.distribution_needed.clone());
                 });
 
                 // Update the purchase/sales needed to rebalance the portfolio
