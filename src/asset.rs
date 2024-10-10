@@ -6,7 +6,8 @@ use std::fmt;
 // Split by stocks and bonds
 // US stock as 2/3 of total stock.  Then split by 3 for Large, medium, and small cap
 const US_STOCK_FRACTION: f32 = 2.0 / 3.0;
-const EACH_US_STOCK: f32 = US_STOCK_FRACTION / 3.0;
+const LARGE_US_STOCK: f32 = US_STOCK_FRACTION / 2.0; // Large cap at 1/2
+const SMALL_MID_US_STOCK: f32 = US_STOCK_FRACTION / 4.0; // Small and mid cap at 1/4 each
 // International stock as 1/3 of total stock.  Then 1/3 of that as emerging markets and 2/3 as
 // total international
 const INT_STOCK_FRACTION: f32 = 1.0 / 3.0;
@@ -146,9 +147,9 @@ impl SubAllocations {
     /// Divides the asset bond/stock allocations set by the Allocations struct into percentages for
     /// the SubAllocations of how much within international, domestic, bond, stock etc.
     pub fn new_custom(allocations: Allocations) -> Result<Self> {
-        let us_stock_large = allocations.total_stock() * EACH_US_STOCK;
-        let us_stock_mid = allocations.total_stock() * EACH_US_STOCK;
-        let us_stock_small = allocations.total_stock() * EACH_US_STOCK;
+        let us_stock_large = allocations.total_stock() * LARGE_US_STOCK;
+        let us_stock_mid = allocations.total_stock() * SMALL_MID_US_STOCK;
+        let us_stock_small = allocations.total_stock() * SMALL_MID_US_STOCK;
         let us_tot_bond = allocations.total_bond() * US_TOT_BOND_FRACTION;
         let us_corp_bond = allocations.total_bond() * US_CORP_BOND_FRACTION;
         let int_tot_stock = allocations.total_stock() * INT_TOTAL;

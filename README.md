@@ -3,9 +3,9 @@ Algorithm setup to determine proper spread of Vanguard ETF index funds and adjus
   
 |Symbol|Description              |Type |% of type|
 |------|-------------------------|-----|---------|
-|VV    |US large cap stock       |Stock|22.222   |
-|VO    |US mid cap stock         |Stock|22.222   |
-|VB    |US small cap stock       |Stock|22.222   |
+|VV    |US large cap stock       |Stock|33.333   |
+|VO    |US mid cap stock         |Stock|16.667   |
+|VB    |US small cap stock       |Stock|16.667   |
 |VTC   |US total corp bond       |Bond |33.333   |
 |BND   |US total bond            |Bond |33.333   |
 |VXUS  |Total international stock|Stock|22.222   |
