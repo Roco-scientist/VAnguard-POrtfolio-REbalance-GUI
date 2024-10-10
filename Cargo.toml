@@ -1,7 +1,7 @@
 [package]
 name = "vapore-gui"
 description = "Vangaurd portfolio rebalancing algorithm"
-version = "0.8.4"
+version = "0.8.5"
 authors = ["Rory Coffey <coffeyrt@gmail.com>"]
 edition = "2021"
 rust-version = "1.72"
