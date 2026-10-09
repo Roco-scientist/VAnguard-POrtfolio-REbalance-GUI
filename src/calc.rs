@@ -23,6 +23,20 @@ const HIGH_TO_LOW_RISK: [StockSymbol; 9] = [
     StockSymbol::VTIP,
 ];
 
+// Fill order for the taxable brokerage account: tax-efficient stock index funds first,
+// bonds and TIPS (taxed as ordinary income) last
+const TAXABLE_FILL_ORDER: [StockSymbol; 9] = [
+    StockSymbol::VV,
+    StockSymbol::VO,
+    StockSymbol::VB,
+    StockSymbol::VXUS,
+    StockSymbol::VWO,
+    StockSymbol::BNDX,
+    StockSymbol::BND,
+    StockSymbol::VTC,
+    StockSymbol::VTIP,
+];
+
 /// to_buy calculates how much of each stock and bond should be bought and sold to rebalance the
 /// portfolio.
 pub fn to_buy(
@@ -297,8 +311,8 @@ fn retirement_calc(
 
     if include_brokerage {
         let mut brokerage_target = ShareValues::new();
-        for stock_symbol in HIGH_TO_LOW_RISK.iter().rev() {
-            let value = target_overall_retirement
+        for stock_symbol in TAXABLE_FILL_ORDER.iter() {
+            let value = remaining_target // was target_overall_retirement
                 .stock_value(stock_symbol.clone())
                 .min(brokerage_total);
             brokerage_total -= value;

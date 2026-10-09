@@ -563,22 +563,29 @@ impl ShareValues {
             + other_int_bond_value
             + other_int_stock_value;
 
-        // Calculate values for each stock
+        // Weight outside holdings by the actual sub-allocation shares
+        let share = |part: f32, total: f32| if total > 0.0 { part / total } else { 0.0 };
+        let us_stock_total = sub_allocations.us_stock_large
+            + sub_allocations.us_stock_mid
+            + sub_allocations.us_stock_small;
+        let int_stock_total = sub_allocations.int_tot_stock + sub_allocations.int_emerging_stock;
+        let us_bond_total = sub_allocations.us_tot_bond + sub_allocations.us_corp_bond;
+
         let vxus_value = (total_value * sub_allocations.int_tot_stock / 100.0)
-            - (other_int_stock_value * 2.0 / 3.0);
-        let bndx_value = (total_value * sub_allocations.int_bond / 100.0) - other_int_bond_value;
-        let bnd_value =
-            (total_value * sub_allocations.us_tot_bond / 100.0) - (other_us_bond_value / 2.0);
+            - other_int_stock_value * share(sub_allocations.int_tot_stock, int_stock_total);
         let vwo_value = (total_value * sub_allocations.int_emerging_stock / 100.0)
-            - (other_int_stock_value / 3.0);
-        let vo_value =
-            (total_value * sub_allocations.us_stock_mid / 100.0) - (other_us_stock_value / 3.0);
-        let vb_value =
-            (total_value * sub_allocations.us_stock_small / 100.0) - (other_us_stock_value / 3.0);
-        let vtc_value =
-            (total_value * sub_allocations.us_corp_bond / 100.0) - (other_us_bond_value / 2.0);
-        let vv_value =
-            (total_value * sub_allocations.us_stock_large / 100.0) - (other_us_stock_value / 3.0);
+            - other_int_stock_value * share(sub_allocations.int_emerging_stock, int_stock_total);
+        let bndx_value = (total_value * sub_allocations.int_bond / 100.0) - other_int_bond_value;
+        let bnd_value = (total_value * sub_allocations.us_tot_bond / 100.0)
+            - other_us_bond_value * share(sub_allocations.us_tot_bond, us_bond_total);
+        let vtc_value = (total_value * sub_allocations.us_corp_bond / 100.0)
+            - other_us_bond_value * share(sub_allocations.us_corp_bond, us_bond_total);
+        let vo_value = (total_value * sub_allocations.us_stock_mid / 100.0)
+            - other_us_stock_value * share(sub_allocations.us_stock_mid, us_stock_total);
+        let vb_value = (total_value * sub_allocations.us_stock_small / 100.0)
+            - other_us_stock_value * share(sub_allocations.us_stock_small, us_stock_total);
+        let vv_value = (total_value * sub_allocations.us_stock_large / 100.0)
+            - other_us_stock_value * share(sub_allocations.us_stock_large, us_stock_total);
         let vtip_value = total_value * sub_allocations.inflation_protected / 100.0;
 
         // set vmfxx, ie cash, target value to 0 and return ShareValues
@@ -992,9 +999,7 @@ impl VanguardHoldings {
         self.transactions.clone()
     }
     pub fn get_distributions(&self, account_number: &u32) -> f32 {
-        *self.distributions
-            .get(account_number)
-            .unwrap_or(&0.0)
+        *self.distributions.get(account_number).unwrap_or(&0.0)
     }
     // Calculated the previous end of year holdings value based on the holdings times the quotes
     // from December 31st of the previous year.
@@ -1046,7 +1051,9 @@ impl VanguardHoldings {
                 } else if transaction.symbol != StockSymbol::Empty {
                     eoy_holdings
                         .subtract_stock_value(transaction.symbol.clone(), transaction.shares);
-                } else if transaction.transaction_type == TransactionType::Distribution && transaction.trade_date < following_year {
+                } else if transaction.transaction_type == TransactionType::Distribution
+                    && transaction.trade_date < following_year
+                {
                     let distribution = self
                         .distributions
                         .entry(transaction.account_number)
