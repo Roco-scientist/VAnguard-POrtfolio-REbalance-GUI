@@ -20,6 +20,7 @@ Each fund is a fraction of its type. The type totals come from the stock/bond/in
 
 The fractions are constants at the top of `src/asset.rs` and can be changed there. If you change them, update this table. Notes on the choices:
 
+- Vanguard's Target Retirement funds hold only a total US stock fund, a total international stock fund, a total bond fund, a total international bond fund, and short-term TIPS. Splitting US stock into VV/VO/VB, adding VWO, and adding VTC are this project's own choices.
 - Stock is 60% US and 40% international, and bonds are 70% US and 30% international, matching Vanguard's Target Retirement funds.
 - US stock is weighted roughly like the market (70% large, 15% mid, 15% small). Raising the mid and small cap weights is a deliberate bet on the size premium, not something Vanguard does.
 - VXUS already holds emerging markets, so VWO is only a small extra tilt. Set `INT_EMERGING` to 0 to remove it.
@@ -37,7 +38,7 @@ Retirement accounts follow a glide path based on retirement year, modeled on Van
 |0 to 7 after       |50 down to 30  |
 |More than 7 after  |30             |
 
-Inflation protected bonds (VTIP) start at 0% five years before retirement and rise 1.8 points per year to 18% five years after. The rest is bonds. Check these figures against Vanguard's published documents, as they can change.
+Inflation protected bonds (VTIP) start at 0% five years before retirement and rise 1.5 points per year to 18% seven years after. The rest is bonds. The glide path was checked against the published compositions of the Target Retirement 2020 through 2055 funds, where stock matched within about one point. The 18% endpoint is an estimate, so recheck it against the Target Retirement Income fund, and recheck all figures periodically since Vanguard can change them.
 
 Brokerage accounts that are not included in retirement use a fixed stock percentage from a slider (default 65).
 
