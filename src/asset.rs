@@ -63,8 +63,7 @@ impl Allocations {
         } else {
             30.0
         };
-        // Same inflation-protected ramp you had: 0% at 5 yrs out, 18% at 5 yrs past
-        let total_inflation_protected = (1.8 * (5.0 - ytr)).clamp(0.0, 18.0);
+        let total_inflation_protected = (1.5 * (5.0 - ytr)).clamp(0.0, 18.0);
         let total_bond = 100.0 - total_stock - total_inflation_protected;
 
         Ok(Allocations {
